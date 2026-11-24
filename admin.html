@@ -79,6 +79,7 @@ button,input,select,textarea{font:inherit}
 .ev.done b::before{content:"✓ ";color:var(--green)}
 .ev.absent{background:repeating-linear-gradient(45deg,#fff 0 6px,#fdecec 6px 12px);border-left-color:#999}
 .ev.absent b{text-decoration:line-through;color:#888}
+.ev.cont{border-top-left-radius:0;border-top-right-radius:0;margin-top:-4px;height:calc(100% + 4px)}
 .ev.block{background:repeating-linear-gradient(45deg,#ececec 0 6px,#f6f6f6 6px 12px);border-left-color:#777;color:#555}
 .ev.past:not(.done):not(.absent):not(.block){opacity:.75}
 .closedcol{grid-row:span var(--rows);display:grid;place-items:center;color:var(--mute);background:repeating-linear-gradient(45deg,#f1f1f0 0 8px,#fafaf9 8px 16px);border-right:1px solid var(--line)}
@@ -151,7 +152,7 @@ textarea{min-height:70px;resize:vertical}
     <dl class="info" id="dinfo"></dl>
     <label>Statut</label>
     <div class="stseg" id="dstatus"><button data-s="ok">Prévu</button><button data-s="done">Venu ✓</button><button data-s="absent">Absent</button></div>
-    <label for="dnote">Note du salon</label>
+    <label for="dnote">Précisions / note</label>
     <textarea id="dnote" maxlength="300" placeholder="Ex. : dégradé bas, client fidèle…"></textarea>
     <div class="err" id="derr"></div>
     <div class="row"><button class="btn danger" id="dcancel">Annuler le RDV</button><button class="btn dark" id="dclose">Fermer</button></div>
@@ -194,7 +195,7 @@ textarea{min-height:70px;resize:vertical}
 
 <script type="module">
 import { firebaseConfig, ownerEmail } from './firebase-config.js';
-import { SERVICES, OPEN_HOUR, CLOSE_HOUR, CLOSED_DAYS } from './salon.js';
+import { SERVICES, OPEN_HOUR, CLOSE_HOUR, CLOSED_DAYS, slotsFor } from './salon.js';
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import { getFirestore, collection, query, where, onSnapshot, doc, writeBatch, updateDoc, deleteDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
@@ -210,7 +211,10 @@ const fromIso=s=>{const[y,m,dd]=String(s).split('-').map(Number);return new Date
 const sid=(d,t)=>d+'_'+t.replace(':','');
 const addDays=(d,n)=>{const x=new Date(d);x.setDate(x.getDate()+n);return x};
 const longDate=s=>{const d=fromIso(s);return DAYS[d.getDay()]+' '+d.getDate()+' '+MONTHS[d.getMonth()]};
-const svc=n=>SERVICES.find(s=>s.n===n)||{n:n||'Prestation',color:'#6b7280',prix:0};
+const svc=n=>SERVICES.find(s=>s.n===n)||{n:n||'Prestation',color:'#6b7280',prix:0,dur:30};
+const dur=m=>m<60?m+' min':Math.floor(m/60)+' h'+(m%60?' '+String(m%60).padStart(2,'0'):'');
+/* créneaux occupés par un RDV (1 pour 30 min, 2 pour 40 min…) */
+const idsOf=b=>{const i=SLOTS.indexOf(b.t);const n=slotsFor(svc(b.service));const out=[];for(let j=0;j<n&&i+j<SLOTS.length;j++)out.push(sid(b.d,SLOTS[i+j]));return out.length?out:[sid(b.d,b.t)]};
 const pl=(n,w)=>n+' '+w+(n>1?'s':'');
 const euro=n=>n.toLocaleString('fr-FR')+' €';
 
@@ -270,8 +274,10 @@ function render(){
   const active=list.filter(b=>b.status!=='absent');
   const openDays=r.filter(d=>!CLOSED_DAYS.includes(d.getDay())).length;
   const capacity=openDays*SLOTS.length;
-  const blocked=Object.keys(slots).filter(k=>!bookings[k]).length;
-  const fill=capacity?Math.round(100*list.length/Math.max(1,capacity-blocked)):0;
+  const cont={};for(const b of list){idsOf(b).slice(1).forEach(k=>cont[k]=b.id)}
+  const blocked=Object.keys(slots).filter(k=>!bookings[k]&&!cont[k]).length;
+  const used=list.reduce((n,b)=>n+idsOf(b).length,0);
+  const fill=capacity?Math.round(100*used/Math.max(1,capacity-blocked)):0;
   const total=active.reduce((s,b)=>s+(svc(b.service).prix||0),0);
   const upcoming=list.filter(b=>b.status==='ok'&&new Date(fromIso(b.d).setHours(+b.t.slice(0,2),+b.t.slice(3)))>now).sort((x,y)=>(x.d+x.t).localeCompare(y.d+y.t))[0];
   const todayCount=list.filter(b=>b.d===todayIso).length;
@@ -300,9 +306,10 @@ function render(){
       const st=new Date(d);st.setHours(+t.slice(0,2),+t.slice(3));const en=new Date(st.getTime()+30*60000);
       const past=en<=now,isNow=st<=now&&now<en;
       let cls='cell'+(isHour?'':' hour')+(past?' past':'')+(k===todayIso&&!past?' todaycol':'')+(isNow?' now':'');
-      const b=bookings[id],s=slots[id];
+      const b=bookings[id],s=slots[id],c=cont[id]&&bookings[cont[id]];
       let inner='';
-      if(b){const v=svc(b.service);inner='<button class="ev'+(b.status==='done'?' done':b.status==='absent'?' absent':'')+(past?' past':'')+'" style="--c:'+v.color+'" data-b="'+esc(id)+'"><b>'+esc(b.name)+'</b><small>'+esc(v.n)+(b.phone?' · '+esc(b.phone):'')+'</small></button>'}
+      if(c&&!b){const v=svc(c.service);inner='<button class="ev cont'+(c.status==='done'?' done':c.status==='absent'?' absent':'')+(past?' past':'')+'" style="--c:'+v.color+'" data-b="'+esc(c.id)+'"><small>↳ suite · '+esc(c.name)+'</small></button>'}
+      else if(b){const v=svc(b.service);inner='<button class="ev'+(b.status==='done'?' done':b.status==='absent'?' absent':'')+(past?' past':'')+'" style="--c:'+v.color+'" data-b="'+esc(id)+'"><b>'+esc(b.name)+'</b><small>'+esc(v.n)+(b.phone?' · '+esc(b.phone):'')+'</small></button>'}
       else if(s){inner='<button class="ev block" data-x="'+esc(id)+'"><b>Bloqué</b></button>'}
       else if(!past){cls+=' free'}
       h+='<div class="'+cls+'" data-d="'+k+'" data-t="'+t+'"'+(cls.includes('free')?' role="button" tabindex="0" aria-label="Créneau libre '+t+'"':'')+'>'+inner+'</div>';
@@ -332,7 +339,8 @@ function openBooking(id){
   $('dhead').style.setProperty('--c',v.color);
   $('dname').textContent=b.name;$('dwhen').textContent=longDate(b.d)+' à '+b.t;
   const tel=String(b.phone||'').replace(/[^0-9+]/g,'');
-  $('dinfo').innerHTML='<dt>Prestation</dt><dd>'+esc(v.n)+(v.prix?' · '+euro(v.prix):'')+'</dd>'+
+  $('dinfo').innerHTML='<dt>Prestation</dt><dd>'+esc(v.n)+'</dd>'+
+    '<dt>Durée · prix</dt><dd>'+dur(v.dur||30)+' · '+esc(v.p||(v.prix?euro(v.prix):'—'))+'</dd>'+
     '<dt>Téléphone</dt><dd>'+(b.phone?'<a href="tel:'+esc(tel)+'">'+esc(b.phone)+'</a>':'—')+'</dd>'+
     '<dt>Réservé le</dt><dd>'+(b.created?esc(new Date(b.created).toLocaleString('fr-FR',{dateStyle:'short',timeStyle:'short'})):'—')+'</dd>';
   $('dnote').value=b.note||'';$('derr').textContent='';
@@ -350,7 +358,7 @@ $('dclose').onclick=()=>$('ddlg').close();
 $('dcancel').onclick=async()=>{
   const btn=$('dcancel');if(!btn.dataset.armed){btn.dataset.armed='1';btn.textContent='Confirmer l\'annulation';return}
   btn.disabled=true;
-  try{await deleteDoc(doc(db,'bookings',current));await deleteDoc(doc(db,'slots',current));$('ddlg').close()}
+  try{const ids=idsOf(bookings[current]);await deleteDoc(doc(db,'bookings',current));for(const k of ids)await deleteDoc(doc(db,'slots',k));$('ddlg').close()}
   catch(_){$('derr').textContent='L\'annulation a échoué, réessaie.'}
   finally{btn.disabled=false}
 };
@@ -360,7 +368,7 @@ $('bclose').onclick=()=>$('bdlg').close();
 $('bfree').onclick=async()=>{try{await deleteDoc(doc(db,'slots',current));$('bdlg').close()}catch(_){$('berr').textContent='Impossible de débloquer, réessaie.'}};
 
 /* ajouter / bloquer */
-$('aserv').innerHTML=SERVICES.map(s=>'<option>'+esc(s.n)+'</option>').join('');
+$('aserv').innerHTML=SERVICES.map(s=>'<option value="'+esc(s.n)+'">'+esc(s.n)+' ('+dur(s.dur||30)+')</option>').join('');
 $('atime').innerHTML=SLOTS.map(t=>'<option>'+t+'</option>').join('');
 $('atime').setAttribute('aria-label','Heure');
 function openFree(d,t){
@@ -386,12 +394,14 @@ $('aform').addEventListener('submit',async e=>{
   const d=$('adate').value,t=$('atime').value,name=$('aname').value.trim();
   if(!d||!name){$('aerr').textContent='Indique au moins la date et le nom.';return}
   const dd=fromIso(d);if(CLOSED_DAYS.includes(dd.getDay())){$('aerr').textContent='Le salon est fermé ce jour-là.';return}
-  const id=sid(d,t);
-  if(slots[id]){$('aerr').textContent='Ce créneau est déjà pris ou bloqué.';return}
+  const id=sid(d,t),sv=svc($('aserv').value),n=slotsFor(sv),i0=SLOTS.indexOf(t);
+  if(i0+n>SLOTS.length){$('aerr').textContent='Pas assez de temps avant la fermeture pour cette prestation.';return}
+  const need=SLOTS.slice(i0,i0+n).map(x=>sid(d,x));
+  if(need.some(k=>slots[k])){$('aerr').textContent=n>1?'Ce créneau ou le suivant est déjà pris ou bloqué ('+dur(sv.dur)+').':'Ce créneau est déjà pris ou bloqué.';return}
   $('asave').disabled=true;
   try{
     const batch=writeBatch(db);
-    batch.set(doc(db,'slots',id),{d,t,taken:true});
+    need.forEach((k,j)=>batch.set(doc(db,'slots',k),{d,t:SLOTS[i0+j],taken:true}));
     batch.set(doc(db,'bookings',id),{d,t,name,phone:$('aphone').value.trim(),service:$('aserv').value,status:'ok',note:$('anote').value.trim(),created:new Date().toISOString()});
     await batch.commit();$('adlg').close();
     anchor=dd;if(view==='day'||!range().some(x=>iso(x)===d))subscribe();
