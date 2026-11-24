@@ -66,11 +66,6 @@ nav a.l:hover{color:var(--ink)}
 .hours td+td{text-align:right;white-space:nowrap;font-weight:500}
 .hours tr.today td{color:var(--red2)}
 .split{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(320px,100%),1fr));gap:40px;align-items:start}
-.admin{display:none}.admin.on{display:block}
-.blist{list-style:none;padding:0;margin:16px 0 0;display:grid;gap:8px}
-.blist li{display:flex;flex-wrap:wrap;gap:6px 16px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 14px}
-.blist .when{font-weight:600;white-space:nowrap;min-width:9em}.blist .who{flex:1}
-.blist .who small{color:var(--mute);display:block}
 footer{border-top:1px solid var(--line);color:var(--mute);font-size:14px}
 footer .wrap{display:flex;flex-wrap:wrap;gap:10px 30px;align-items:center}
 dialog{border:0;border-radius:14px;padding:0;width:min(440px,94vw);background:#fff;color:#1b1b1b}
@@ -119,12 +114,6 @@ input,select{width:100%;min-height:44px;font:16px Inter,sans-serif;padding:8px 1
     <div class="legend"><span>Cliquez sur un horaire pour réserver</span><span><s>10:00</s> déjà pris</span></div>
     <div class="status" id="status" role="status"></div>
   </div>
-</div></section>
-
-<section class="band admin" id="admin"><div class="wrap">
-  <h2>Rendez-vous à venir</h2>
-  <p style="color:var(--mute);margin:8px 0 0">Visible seulement par le salon.</p>
-  <ul class="blist" id="blist"></ul>
 </div></section>
 
 <section class="band" id="prestations" style="background:var(--panel)"><div class="wrap">
@@ -182,6 +171,7 @@ input,select{width:100%;min-height:44px;font:16px Inter,sans-serif;padding:8px 1
   <span>The Box Barber Shop</span>
   <span>6 Rue du Général Leclerc, 76000 Rouen</span>
   <span>Lundi au samedi, 8h00 – 20h00</span>
+  <a class="btn ghost" href="admin.html" style="margin-left:auto">Espace salon</a>
 </div></footer>
 
 <dialog id="dlg"><form class="dlg" id="form" method="dialog">
@@ -205,24 +195,24 @@ input,select{width:100%;min-height:44px;font:16px Inter,sans-serif;padding:8px 1
   </div>
 </form></dialog>
 
-<script>
-{
+<script type="module">
+import { firebaseConfig } from './firebase-config.js';
+import { SERVICES, OPEN_HOUR, CLOSE_HOUR, CLOSED_DAYS } from './salon.js';
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+import { getFirestore, collection, query, where, onSnapshot, doc, writeBatch } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+
 const DAYS=['dimanche','lundi','mardi','mercredi','jeudi','vendredi','samedi'];
 const MONTHS=['janv.','févr.','mars','avr.','mai','juin','juil.','août','sept.','oct.','nov.','déc.'];
-const SERVICES=[
-  {n:'Coupe + dessin',d:'Coupe avec motif tracé à la tondeuse.',t:'30 min',p:'à partir de 25 €'},
-  {n:'Coupe homme + taille de barbe',d:'La formule complète : coupe et barbe nette.',t:'30 min',p:'à partir de 30 €'}
-];
-const OPEN=d=>d.getDay()!==0;
-const SLOTS=[];for(let h=8;h<20;h++){SLOTS.push(String(h).padStart(2,'0')+':00',String(h).padStart(2,'0')+':30')}
+const OPEN=d=>!CLOSED_DAYS.includes(d.getDay());
+const SLOTS=[];for(let h=OPEN_HOUR;h<CLOSE_HOUR;h++){SLOTS.push(String(h).padStart(2,'0')+':00',String(h).padStart(2,'0')+':30')}
 const $=id=>document.getElementById(id);
-const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const iso=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
 const fmt=d=>d.getDate().toString().padStart(2,'0')+' '+MONTHS[d.getMonth()];
 const fromIso=s=>{const[y,m,dd]=s.split('-').map(Number);return new Date(y,m-1,dd)};
 const longDate=s=>{const d=fromIso(s);return DAYS[d.getDay()]+' '+d.getDate()+' '+MONTHS[d.getMonth()]};
+const hh=h=>String(h).padStart(2,'0')+'h00';
 
-let week=0,taken=new Set(),db=null,user=null,canWrite=true,picked=null;
+let week=0,taken=new Set(),db=null,picked=null;
 const today=new Date();today.setHours(0,0,0,0);
 
 function render(){
@@ -257,7 +247,7 @@ document.addEventListener('keydown',e=>{if($('dlg').open)return;if(e.key==='Arro
 $('cards').innerHTML=SERVICES.map(s=>'<div class="card"><h3>'+s.n+'</h3><p>'+s.d+'</p><span class="dur">'+s.t+' · '+s.p+'</span></div>').join('');
 $('fserv').innerHTML=SERVICES.map(s=>'<option>'+s.n+'</option>').join('');
 const order=[1,2,3,4,5,6,0];
-$('hours').innerHTML=order.map(i=>'<tr'+(today.getDay()===i?' class="today"':'')+'><td>'+DAYS[i][0].toUpperCase()+DAYS[i].slice(1)+'</td><td>'+(i===0?'Fermé':'08h00 – 20h00')+'</td></tr>').join('');
+$('hours').innerHTML=order.map(i=>'<tr'+(today.getDay()===i?' class="today"':'')+'><td>'+DAYS[i][0].toUpperCase()+DAYS[i].slice(1)+'</td><td>'+(CLOSED_DAYS.includes(i)?'Fermé':hh(OPEN_HOUR)+' – '+hh(CLOSE_HOUR))+'</td></tr>').join('');
 
 $('grid').addEventListener('click',e=>{
   const b=e.target.closest('.s:not(.taken)');if(!b)return;
@@ -274,69 +264,38 @@ $('form').addEventListener('submit',async e=>{
   e.preventDefault();
   const name=$('fname').value.trim(),phone=$('fphone').value.trim(),serv=$('fserv').value;
   if(!name||!phone){$('ferr').textContent='Merci d\'indiquer votre nom et votre téléphone.';return}
-  if(!db){$('ferr').textContent='La réservation en ligne n\'est pas disponible pour le moment. Merci de contacter le salon.';return}
-  if(!canWrite){$('ferr').textContent='Votre accès à cette page ne permet pas de réserver en ligne. Merci de contacter le salon.';return}
+  if(!db){$('ferr').textContent='La réservation en ligne n\'est pas encore disponible. Merci de contacter le salon.';return}
   const id=picked.d+'_'+picked.t.replace(':','');
   $('fsubmit').disabled=true;$('ferr').textContent='';
   try{
-    const ref=db.doc('slots/'+id);
-    const lease=await ref.acquire({holder:'b'+Math.random().toString(36).slice(2),ttlMs:5000});
-    if(!lease.acquired)throw{code:'busy'};
-    const cur=await ref.get();
-    if(cur.exists&&cur.data()?.taken)throw{code:'busy'};
-    const uid=user?await user.id():null;
-    if(!uid)throw{code:'invalid_argument'};
-    await ref.set({d:picked.d,t:picked.t,taken:true,uid});
-    const mine=db.doc('bookings/'+uid);const prev=await mine.get();
-    const items={...(prev.exists?(prev.data()?.items||{}):{})};
-    items[id]={d:picked.d,t:picked.t,name,phone,service:serv,created:new Date().toISOString()};
-    await mine.set({items});
+    const batch=writeBatch(db);
+    batch.set(doc(db,'slots',id),{d:picked.d,t:picked.t,taken:true});
+    batch.set(doc(db,'bookings',id),{d:picked.d,t:picked.t,name,phone,service:serv,status:'ok',created:new Date().toISOString()});
+    await batch.commit();
     try{localStorage.setItem('thebox-me',JSON.stringify({n:name,p:phone}))}catch(_){}
     taken.add(id);render();
     $('fdonetxt').textContent=serv+' · '+longDate(picked.d)+' à '+picked.t+'. À bientôt chez The Box !';
     $('fbody').hidden=true;$('fdone').hidden=false;
   }catch(err){
-    if(err&&err.code==='busy'){$('ferr').textContent='Désolé, ce créneau vient d\'être pris. Choisissez-en un autre.';taken.add(id);render()}
-    else if(err&&err.code==='invalid_argument'){canWrite=false;$('ferr').textContent='Votre accès à cette page ne permet pas de réserver en ligne. Merci de contacter le salon.'}
-    else $('ferr').textContent='La réservation n\'a pas pu être enregistrée. Réessayez dans un instant.';
+    if(err&&err.code==='permission-denied'){$('ferr').textContent='Désolé, ce créneau vient d\'être pris. Choisissez-en un autre.'}
+    else $('ferr').textContent='La réservation n\'a pas pu être enregistrée. Vérifiez votre connexion et réessayez.';
   }finally{$('fsubmit').disabled=false}
 });
 
 render();
 setInterval(render,60000);
 
-async function start(){
-  db=await window.claude?.use?.('db').catch(()=>null)??null;
-  user=await window.claude?.use?.('user').catch(()=>null)??null;
-  if(!db){$('status').textContent='Planning hors ligne : les créneaux déjà pris ne peuvent pas être affichés.';return}
-  try{const c=await user?.can?.('data.write');if(c===false)canWrite=false}catch(_){}
-  const timer=setTimeout(()=>{$('status').textContent='Chargement des disponibilités…'},10000);
-  db.collection('slots').where('d','>=',iso(today)).onSnapshot(snap=>{
-    if(!snap.metadata.fromCache){clearTimeout(timer);$('status').textContent=''}
-    taken=new Set(snap.docs.filter(x=>x.data()?.taken).map(x=>x.id));render();
-  },()=>{clearTimeout(timer);$('status').textContent='Impossible de charger les disponibilités pour le moment.'});
-  let admin=false;try{admin=(await user?.canEdit?.())||(await user?.isOwner?.())||false}catch(_){}
-  if(!admin)return;
-  $('admin').classList.add('on');
-  db.collection('bookings').onSnapshot(snap=>{
-    const rows=[];const t0=iso(today);
-    for(const x of snap.docs){const it=x.data()?.items||{};for(const k in it){const r=it[k];if(r&&String(r.d)>=t0)rows.push({id:k,owner:x.id,...r})}}
-    rows.sort((a,b)=>(String(a.d)+a.t).localeCompare(String(b.d)+b.t));
-    $('blist').innerHTML=rows.length?rows.map(r=>'<li><span class="when">'+esc(longDate(String(r.d)))+' · '+esc(r.t)+'</span><span class="who">'+esc(r.name)+'<small>'+esc(r.phone)+' · '+esc(r.service)+'</small></span><button class="btn ghost" data-cancel="'+esc(r.id)+'" data-owner="'+esc(r.owner)+'">Annuler</button></li>').join('')
-      :'<li><span class="who">Aucun rendez-vous pour l\'instant.</span></li>';
-  },()=>{$('blist').innerHTML='<li><span class="who">Impossible de charger les rendez-vous.</span></li>'});
-  $('blist').addEventListener('click',async e=>{
-    const b=e.target.closest('[data-cancel]');if(!b)return;
-    if(b.dataset.armed!=='1'){b.dataset.armed='1';b.textContent='Confirmer l\'annulation';return}
-    b.disabled=true;const id=b.dataset.cancel;
-    try{
-      const ref=db.doc('bookings/'+b.dataset.owner);const cur=await ref.get();
-      const items={...(cur.exists?(cur.data()?.items||{}):{})};delete items[id];
-      await ref.set({items});await db.doc('slots/'+id).delete();taken.delete(id);render()}
-    catch(_){b.disabled=false;b.textContent='Erreur, réessayer'}
-  });
-}
-start();
+if(!firebaseConfig||!firebaseConfig.apiKey||firebaseConfig.apiKey.startsWith('COLLE')){
+  $('status').textContent='Réservation en ligne bientôt disponible.';
+}else{
+  try{
+    const app=initializeApp(firebaseConfig);db=getFirestore(app);
+    const timer=setTimeout(()=>{$('status').textContent='Chargement des disponibilités…'},10000);
+    onSnapshot(query(collection(db,'slots'),where('d','>=',iso(today))),snap=>{
+      clearTimeout(timer);$('status').textContent='';
+      taken=new Set(snap.docs.map(x=>x.id));render();
+    },()=>{clearTimeout(timer);$('status').textContent='Impossible de charger les disponibilités pour le moment.'});
+  }catch(_){db=null;$('status').textContent='Réservation en ligne indisponible pour le moment.'}
 }
 </script>
 </body>
