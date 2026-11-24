@@ -56,6 +56,11 @@ nav a.l:hover{color:var(--ink)}
 .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:22px}
 .card h3{font-size:24px}.card p{color:var(--mute);margin:8px 0 0}
 .card .dur{display:inline-block;margin-top:14px;color:var(--red2);font-weight:600;white-space:nowrap}
+.map{position:relative;border-radius:14px;overflow:hidden;border:1px solid var(--line);margin-top:18px;background:#eef0ec;aspect-ratio:16/9;min-height:240px}
+.map svg{position:absolute;inset:0;width:100%;height:100%}
+.map .go{position:absolute;left:50%;bottom:18px;transform:translateX(-50%);white-space:nowrap}
+.addr{display:flex;align-items:center;gap:8px;margin-top:10px;font-weight:500}
+.links{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}
 .hours{width:100%;max-width:520px;border-collapse:collapse;margin-top:20px}
 .hours td{padding:12px 0;border-bottom:1px solid var(--line)}
 .hours td+td{text-align:right;white-space:nowrap;font-weight:500}
@@ -88,6 +93,7 @@ input,select{width:100%;min-height:44px;font:16px Inter,sans-serif;padding:8px 1
   <a class="brand" href="#top">The Box</a>
   <a class="l" href="#reserver">Réserver</a>
   <a class="l" href="#prestations">Prestations</a>
+  <a class="l" href="#salon">Accès</a>
   <a class="l" href="#horaires">Horaires</a>
   <a class="btn" href="#reserver">Prendre RDV</a>
 </nav></header>
@@ -100,7 +106,7 @@ input,select{width:100%;min-height:44px;font:16px Inter,sans-serif;padding:8px 1
     <div>
       <h1>Réservez votre créneau chez The Box</h1>
       <p>Coupe, barbe ou les deux : choisissez un horaire libre ci-dessous, indiquez votre prénom et votre téléphone, c'est réservé.</p>
-      <div class="facts"><span><b>Lun – Sam</b> 10h00 – 19h00</span><span><b>Dimanche</b> fermé</span><span><b>Créneaux</b> de 30 min</span></div>
+      <div class="facts"><span><b>Lun – Sam</b> 8h00 – 20h00</span><span><b>Dimanche</b> fermé</span><span><b>Créneaux</b> de 30 min</span></div>
     </div>
   </div>
   <div class="planner" style="margin-top:28px">
@@ -126,6 +132,37 @@ input,select{width:100%;min-height:44px;font:16px Inter,sans-serif;padding:8px 1
   <div class="cards" id="cards"></div>
 </div></section>
 
+<section class="band" id="salon"><div class="wrap">
+  <h2>Où se situe le salon ?</h2>
+  <div class="addr"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--red2)" stroke-width="2" aria-hidden="true"><path d="M12 22s7-6.2 7-12a7 7 0 1 0-14 0c0 5.8 7 12 7 12z"/><circle cx="12" cy="10" r="2.5"/></svg>6 Rue du Général Leclerc, 76000 Rouen</div>
+  <div class="map">
+    <svg viewBox="0 0 800 450" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Plan du quartier : le salon est rue du Général Leclerc, au nord de la Seine">
+      <rect width="800" height="450" fill="#eef0ec"/>
+      <g fill="#dfe8d6"><rect x="40" y="40" width="120" height="80" rx="10"/><rect x="600" y="60" width="140" height="70" rx="10"/><rect x="520" y="360" width="160" height="60" rx="10"/></g>
+      <path d="M-20 330 C 150 280, 260 300, 400 330 S 650 380, 820 330" stroke="#a9cbe8" stroke-width="46" fill="none"/>
+      <g stroke="#fff" stroke-linecap="round" fill="none">
+        <path d="M0 175 H800" stroke-width="16"/>
+        <path d="M0 95 H800" stroke-width="9"/><path d="M0 250 H800" stroke-width="9"/>
+        <path d="M210 0 V300" stroke-width="9"/><path d="M400 0 V320" stroke-width="12"/><path d="M590 0 V330" stroke-width="9"/>
+        <path d="M300 0 L330 300" stroke-width="6"/><path d="M500 0 L480 320" stroke-width="6"/><path d="M110 0 L140 290" stroke-width="6"/><path d="M690 0 L700 340" stroke-width="6"/>
+        <path d="M330 300 L345 450" stroke-width="12"/><path d="M560 330 L570 450" stroke-width="9"/>
+      </g>
+      <text x="40" y="165" font-family="Inter,sans-serif" font-size="15" fill="#6b6b6b">Rue du Général Leclerc</text>
+      <text x="610" y="402" font-family="Inter,sans-serif" font-size="15" fill="#5a86ad" font-style="italic">La Seine</text>
+      <ellipse cx="420" cy="178" rx="14" ry="5" fill="#000" opacity=".2"/>
+      <path d="M420 176 C 420 176, 396 146, 396 128 a24 24 0 1 1 48 0 C 444 146, 420 176, 420 176z" fill="#e0262b" stroke="#fff" stroke-width="3"/>
+      <circle cx="420" cy="128" r="8" fill="#fff"/>
+      <rect x="452" y="108" width="98" height="34" rx="8" fill="#000"/>
+      <text x="501" y="131" text-anchor="middle" font-family="Oswald,sans-serif" font-size="17" fill="#fff">THE BOX</text>
+    </svg>
+    <a class="btn go" href="https://www.google.com/maps/search/?api=1&amp;query=6%20Rue%20du%20G%C3%A9n%C3%A9ral%20Leclerc%2076000%20Rouen" target="_blank" rel="noopener">Afficher la carte</a>
+  </div>
+  <div class="links">
+    <a class="btn ghost" href="https://www.google.com/maps/dir/?api=1&amp;destination=6%20Rue%20du%20G%C3%A9n%C3%A9ral%20Leclerc%2076000%20Rouen" target="_blank" rel="noopener">Itinéraire Google Maps</a>
+    <a class="btn ghost" href="https://waze.com/ul?q=6%20Rue%20du%20G%C3%A9n%C3%A9ral%20Leclerc%2076000%20Rouen&amp;navigate=yes" target="_blank" rel="noopener">Ouvrir dans Waze</a>
+  </div>
+</div></section>
+
 <section class="band" id="horaires"><div class="wrap split">
   <div>
     <h2>Horaires d'ouverture</h2>
@@ -143,7 +180,8 @@ input,select{width:100%;min-height:44px;font:16px Inter,sans-serif;padding:8px 1
 <footer class="band"><div class="wrap">
   <img src="logo.png" alt="" width="56" height="56">
   <span>The Box Barber Shop</span>
-  <span>Lundi au samedi, 10h00 – 19h00</span>
+  <span>6 Rue du Général Leclerc, 76000 Rouen</span>
+  <span>Lundi au samedi, 8h00 – 20h00</span>
 </div></footer>
 
 <dialog id="dlg"><form class="dlg" id="form" method="dialog">
@@ -172,13 +210,11 @@ input,select{width:100%;min-height:44px;font:16px Inter,sans-serif;padding:8px 1
 const DAYS=['dimanche','lundi','mardi','mercredi','jeudi','vendredi','samedi'];
 const MONTHS=['janv.','févr.','mars','avr.','mai','juin','juil.','août','sept.','oct.','nov.','déc.'];
 const SERVICES=[
-  {n:'Coupe homme',d:'Shampoing, coupe aux ciseaux ou à la tondeuse, coiffage.',t:'30 min'},
-  {n:'Taille de barbe',d:'Contours nets, traçage au rasoir, soin pour la barbe.',t:'30 min'},
-  {n:'Coupe + barbe',d:'La formule complète pour ressortir impeccable.',t:'30 min'},
-  {n:'Coupe enfant',d:'Pour les moins de 12 ans.',t:'30 min'}
+  {n:'Coupe + dessin',d:'Coupe avec motif tracé à la tondeuse.',t:'30 min',p:'à partir de 25 €'},
+  {n:'Coupe homme + taille de barbe',d:'La formule complète : coupe et barbe nette.',t:'30 min',p:'à partir de 30 €'}
 ];
 const OPEN=d=>d.getDay()!==0;
-const SLOTS=[];for(let h=10;h<19;h++){SLOTS.push(String(h).padStart(2,'0')+':00',String(h).padStart(2,'0')+':30')}
+const SLOTS=[];for(let h=8;h<20;h++){SLOTS.push(String(h).padStart(2,'0')+':00',String(h).padStart(2,'0')+':30')}
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const iso=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
@@ -218,10 +254,10 @@ $('prev').onclick=()=>{if(week>0){week--;render()}};
 $('next').onclick=()=>{if(week<7){week++;render()}};
 document.addEventListener('keydown',e=>{if($('dlg').open)return;if(e.key==='ArrowLeft'&&week>0){week--;render()}if(e.key==='ArrowRight'&&week<7){week++;render()}});
 
-$('cards').innerHTML=SERVICES.map(s=>'<div class="card"><h3>'+s.n+'</h3><p>'+s.d+'</p><span class="dur">'+s.t+'</span></div>').join('');
+$('cards').innerHTML=SERVICES.map(s=>'<div class="card"><h3>'+s.n+'</h3><p>'+s.d+'</p><span class="dur">'+s.t+' · '+s.p+'</span></div>').join('');
 $('fserv').innerHTML=SERVICES.map(s=>'<option>'+s.n+'</option>').join('');
 const order=[1,2,3,4,5,6,0];
-$('hours').innerHTML=order.map(i=>'<tr'+(today.getDay()===i?' class="today"':'')+'><td>'+DAYS[i][0].toUpperCase()+DAYS[i].slice(1)+'</td><td>'+(i===0?'Fermé':'10h00 – 19h00')+'</td></tr>').join('');
+$('hours').innerHTML=order.map(i=>'<tr'+(today.getDay()===i?' class="today"':'')+'><td>'+DAYS[i][0].toUpperCase()+DAYS[i].slice(1)+'</td><td>'+(i===0?'Fermé':'08h00 – 20h00')+'</td></tr>').join('');
 
 $('grid').addEventListener('click',e=>{
   const b=e.target.closest('.s:not(.taken)');if(!b)return;
