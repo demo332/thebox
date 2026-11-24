@@ -10,4 +10,4 @@ export const firebaseConfig = {
 };
 
 // L'e-mail du compte salon créé dans Firebase > Authentication
-export const ownerEmail = "TON-EMAIL@exemple.com";
+export const ownerEmail = "leogiffard27@gmail.com";
