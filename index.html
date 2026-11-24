@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Box Barber Shop</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* VOICE: confident, sharp, a neighbourhood barber with a clean black storefront.
+   IDEA: the shop's appointment book, framed by the red-and-white barber pole.
+   PICTURE: the live weekly planning is the hero; the logo sits above it, pole stripes as the band edges.
+   COLOUR and TYPE: logo black, white, logo red; Oswald (signage) + Inter.
+   LAYOUT: header, logo + title, planning full width, services, hours, footer; stacks under 600px. */
+:root{color-scheme:dark;--bg:#000;--panel:#121212;--slot:#1d1d1d;--line:#2a2a2a;--ink:#f4f4f4;--mute:#a3a3a3;--red:#e0262b;--red2:#ff4b4f}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 Inter,system-ui,sans-serif;overflow-x:clip}
+h1,h2,h3{font-family:Oswald,Impact,sans-serif;font-weight:600;line-height:1.05;margin:0;text-wrap:balance}
+h2{font-size:clamp(30px,4.5vw,44px)}
+a{color:inherit}
+.band{padding:clamp(28px,4vw,64px) max(5vw,16px)}
+.wrap{max-width:1240px;margin:0 auto}
+.pole{height:12px;background:repeating-linear-gradient(-45deg,var(--red) 0 14px,#fff 14px 28px,#1f3a93 28px 42px,#fff 42px 56px)}
+header{position:sticky;top:0;z-index:5;background:rgba(0,0,0,.92);backdrop-filter:blur(6px);border-bottom:1px solid var(--line)}
+nav{max-width:1240px;margin:0 auto;display:flex;align-items:center;gap:20px;padding:10px max(5vw,16px);flex-wrap:wrap}
+nav img{width:48px;height:48px}
+nav .brand{font-family:Oswald,sans-serif;font-size:20px;font-weight:600;letter-spacing:.02em;margin-right:auto;text-decoration:none}
+nav a.l{text-decoration:none;color:var(--mute);font-weight:500;padding:10px 2px}
+nav a.l:hover{color:var(--ink)}
+.btn{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 22px;border:0;border-radius:8px;background:var(--red);color:#fff;font:600 16px Inter,sans-serif;cursor:pointer;text-decoration:none}
+.btn:hover{background:var(--red2)}
+.btn.ghost{background:transparent;border:1px solid var(--line);color:var(--ink)}
+:focus-visible{outline:3px solid var(--red2);outline-offset:2px}
+.hero{display:grid;grid-template-columns:auto minmax(0,1fr);gap:clamp(20px,4vw,48px);align-items:center;padding-bottom:12px}
+.hero img{width:clamp(150px,18vw,220px);height:auto;display:block}
+.hero h1{font-size:clamp(36px,5.5vw,56px)}
+.hero p{color:var(--mute);margin:12px 0 0;max-width:60ch}
+.facts{display:flex;flex-wrap:wrap;gap:8px 22px;margin-top:16px;font-weight:500}
+.facts span{white-space:nowrap}.facts b{color:var(--red2);font-weight:600}
+.planner{background:#fff;color:#1b1b1b;border-radius:14px;padding:16px clamp(8px,2vw,24px) 20px;box-shadow:0 20px 60px rgba(224,38,43,.15)}
+.ph{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.ph .arrow{width:44px;height:44px;border:0;background:none;font-size:26px;color:#5b4ce0;cursor:pointer;border-radius:8px}
+.ph .arrow:disabled{color:#d4d0f5;cursor:default}
+.ph .wk{flex:1;text-align:center;font-weight:600;color:#555;font-size:14px}
+.grid{display:grid;grid-template-columns:repeat(7,minmax(104px,1fr));gap:8px;overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:4px}
+.day{scroll-snap-align:start;display:flex;flex-direction:column;gap:8px}
+.dh{text-align:center;padding:6px 0 8px}
+.dh b{display:block;font-weight:600;font-size:15px}.dh span{color:#666;font-size:14px}
+.s{min-height:34px;border:0;border-radius:6px;background:#f4f4f4;color:#1b1b1b;font:500 15px Inter,sans-serif;cursor:pointer;white-space:nowrap}
+.s:hover{background:#1b1b1b;color:#fff}
+.s.taken{background:transparent;color:#bbb;text-decoration:line-through;cursor:default}
+.closed{text-align:center;color:#999;font-size:14px;padding-top:6px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 18px;margin-top:12px;font-size:13px;color:#666}
+.status{font-size:13px;color:#666;margin-top:6px;min-height:20px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(240px,100%),1fr));gap:16px;margin-top:24px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:22px}
+.card h3{font-size:24px}.card p{color:var(--mute);margin:8px 0 0}
+.card .dur{display:inline-block;margin-top:14px;color:var(--red2);font-weight:600;white-space:nowrap}
+.hours{width:100%;max-width:520px;border-collapse:collapse;margin-top:20px}
+.hours td{padding:12px 0;border-bottom:1px solid var(--line)}
+.hours td+td{text-align:right;white-space:nowrap;font-weight:500}
+.hours tr.today td{color:var(--red2)}
+.split{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(320px,100%),1fr));gap:40px;align-items:start}
+.admin{display:none}.admin.on{display:block}
+.blist{list-style:none;padding:0;margin:16px 0 0;display:grid;gap:8px}
+.blist li{display:flex;flex-wrap:wrap;gap:6px 16px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 14px}
+.blist .when{font-weight:600;white-space:nowrap;min-width:9em}.blist .who{flex:1}
+.blist .who small{color:var(--mute);display:block}
+footer{border-top:1px solid var(--line);color:var(--mute);font-size:14px}
+footer .wrap{display:flex;flex-wrap:wrap;gap:10px 30px;align-items:center}
+dialog{border:0;border-radius:14px;padding:0;width:min(440px,94vw);background:#fff;color:#1b1b1b}
+dialog::backdrop{background:rgba(0,0,0,.7)}
+.dlg{padding:24px}
+.dlg h3{font-size:28px}.dlg .sub{color:#555;margin:6px 0 18px}
+label{display:block;font-weight:600;font-size:14px;margin:12px 0 6px}
+input,select{width:100%;min-height:44px;font:16px Inter,sans-serif;padding:8px 12px;border:1px solid #ccc;border-radius:8px;background:#fff;color:#1b1b1b}
+.row{display:flex;gap:10px;margin-top:20px;flex-wrap:wrap}.row .btn{flex:1}
+.dlg .btn.ghost{color:#1b1b1b;border-color:#ccc}
+.err{color:#b3191d;font-size:14px;margin-top:10px;min-height:1px}
+.ok{font-size:48px;line-height:1;color:var(--red)}
+@media(max-width:600px){.hero{grid-template-columns:1fr;justify-items:start}.hero img{width:140px}nav a.l{display:none}.grid{grid-template-columns:repeat(7,104px)}}
+@media(prefers-reduced-motion:no-preference){.s{transition:background .15s,color .15s}}
+</style>
+</head>
+<body>
+<header><nav>
+  <img src="logo.png" alt="">
+  <a class="brand" href="#top">The Box</a>
+  <a class="l" href="#reserver">Réserver</a>
+  <a class="l" href="#prestations">Prestations</a>
+  <a class="l" href="#horaires">Horaires</a>
+  <a class="btn" href="#reserver">Prendre RDV</a>
+</nav></header>
+<div class="pole"></div>
+
+<main id="top">
+<section class="band" id="reserver"><div class="wrap">
+  <div class="hero">
+    <img src="logo.png" alt="Logo The Box Barber Shop">
+    <div>
+      <h1>Réservez votre créneau chez The Box</h1>
+      <p>Coupe, barbe ou les deux : choisissez un horaire libre ci-dessous, indiquez votre prénom et votre téléphone, c'est réservé.</p>
+      <div class="facts"><span><b>Lun – Sam</b> 10h00 – 19h00</span><span><b>Dimanche</b> fermé</span><span><b>Créneaux</b> de 30 min</span></div>
+    </div>
+  </div>
+  <div class="planner" style="margin-top:28px">
+    <div class="ph">
+      <button class="arrow" id="prev" aria-label="Semaine précédente">‹</button>
+      <div class="wk" id="wk"></div>
+      <button class="arrow" id="next" aria-label="Semaine suivante">›</button>
+    </div>
+    <div class="grid" id="grid"></div>
+    <div class="legend"><span>Cliquez sur un horaire pour réserver</span><span><s>10:00</s> déjà pris</span></div>
+    <div class="status" id="status" role="status"></div>
+  </div>
+</div></section>
+
+<section class="band admin" id="admin"><div class="wrap">
+  <h2>Rendez-vous à venir</h2>
+  <p style="color:var(--mute);margin:8px 0 0">Visible seulement par le salon.</p>
+  <ul class="blist" id="blist"></ul>
+</div></section>
+
+<section class="band" id="prestations" style="background:var(--panel)"><div class="wrap">
+  <h2>Nos prestations</h2>
+  <div class="cards" id="cards"></div>
+</div></section>
+
+<section class="band" id="horaires"><div class="wrap split">
+  <div>
+    <h2>Horaires d'ouverture</h2>
+    <table class="hours" id="hours"></table>
+  </div>
+  <div>
+    <h2>Comment ça marche</h2>
+    <p style="color:var(--mute)">Choisissez un créneau libre dans le planning, remplissez vos coordonnées et confirmez. Le créneau disparaît aussitôt pour les autres clients. Merci d'arriver 5 minutes en avance ; en cas d'empêchement, prévenez le salon.</p>
+    <a class="btn" href="#reserver" style="margin-top:10px">Voir les créneaux libres</a>
+  </div>
+</div></section>
+</main>
+
+<div class="pole"></div>
+<footer class="band"><div class="wrap">
+  <img src="logo.png" alt="" width="56" height="56">
+  <span>The Box Barber Shop</span>
+  <span>Lundi au samedi, 10h00 – 19h00</span>
+</div></footer>
+
+<dialog id="dlg"><form class="dlg" id="form" method="dialog">
+  <div id="fbody">
+    <h3>Votre rendez-vous</h3>
+    <div class="sub" id="fwhen"></div>
+    <label for="fname">Prénom et nom</label>
+    <input id="fname" autocomplete="name" required maxlength="60">
+    <label for="fphone">Téléphone</label>
+    <input id="fphone" type="tel" autocomplete="tel" required maxlength="20" pattern="[0-9 +().-]{8,20}">
+    <label for="fserv">Prestation</label>
+    <select id="fserv"></select>
+    <div class="err" id="ferr"></div>
+    <div class="row"><button type="button" class="btn ghost" id="fcancel">Annuler</button><button class="btn" id="fsubmit">Confirmer</button></div>
+  </div>
+  <div id="fdone" hidden>
+    <div class="ok">✓</div>
+    <h3 style="margin-top:10px">C'est réservé !</h3>
+    <div class="sub" id="fdonetxt"></div>
+    <div class="row"><button type="button" class="btn" id="fclose">Fermer</button></div>
+  </div>
+</form></dialog>
+
+<script>
+{
+const DAYS=['dimanche','lundi','mardi','mercredi','jeudi','vendredi','samedi'];
+const MONTHS=['janv.','févr.','mars','avr.','mai','juin','juil.','août','sept.','oct.','nov.','déc.'];
+const SERVICES=[
+  {n:'Coupe homme',d:'Shampoing, coupe aux ciseaux ou à la tondeuse, coiffage.',t:'30 min'},
+  {n:'Taille de barbe',d:'Contours nets, traçage au rasoir, soin pour la barbe.',t:'30 min'},
+  {n:'Coupe + barbe',d:'La formule complète pour ressortir impeccable.',t:'30 min'},
+  {n:'Coupe enfant',d:'Pour les moins de 12 ans.',t:'30 min'}
+];
+const OPEN=d=>d.getDay()!==0;
+const SLOTS=[];for(let h=10;h<19;h++){SLOTS.push(String(h).padStart(2,'0')+':00',String(h).padStart(2,'0')+':30')}
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const iso=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+const fmt=d=>d.getDate().toString().padStart(2,'0')+' '+MONTHS[d.getMonth()];
+const fromIso=s=>{const[y,m,dd]=s.split('-').map(Number);return new Date(y,m-1,dd)};
+const longDate=s=>{const d=fromIso(s);return DAYS[d.getDay()]+' '+d.getDate()+' '+MONTHS[d.getMonth()]};
+
+let week=0,taken=new Set(),db=null,user=null,canWrite=true,picked=null;
+const today=new Date();today.setHours(0,0,0,0);
+
+function render(){
+  const start=new Date(today);start.setDate(start.getDate()+week*7);
+  const end=new Date(start);end.setDate(end.getDate()+6);
+  $('wk').textContent=(week===0?'Cette semaine · ':'')+fmt(start)+' – '+fmt(end);
+  $('prev').disabled=week===0;$('next').disabled=week>=7;
+  const now=new Date();
+  let html='';
+  for(let i=0;i<7;i++){
+    const d=new Date(start);d.setDate(d.getDate()+i);const k=iso(d);
+    html+='<div class="day"><div class="dh"><b>'+DAYS[d.getDay()]+'</b><span>'+fmt(d)+'</span></div>';
+    if(!OPEN(d)){html+='<div class="closed">Fermé</div>'}
+    else{
+      const list=SLOTS.filter(t=>{const[h,m]=t.split(':').map(Number);const x=new Date(d);x.setHours(h,m);return x>now});
+      if(!list.length)html+='<div class="closed">Plus de créneau</div>';
+      for(const t of list){
+        const id=k+'_'+t.replace(':','');
+        html+=taken.has(id)?'<button class="s taken" disabled aria-label="'+t+' déjà pris">'+t+'</button>'
+          :'<button class="s" data-d="'+k+'" data-t="'+t+'">'+t+'</button>';
+      }
+    }
+    html+='</div>';
+  }
+  $('grid').innerHTML=html;
+}
+
+$('prev').onclick=()=>{if(week>0){week--;render()}};
+$('next').onclick=()=>{if(week<7){week++;render()}};
+document.addEventListener('keydown',e=>{if($('dlg').open)return;if(e.key==='ArrowLeft'&&week>0){week--;render()}if(e.key==='ArrowRight'&&week<7){week++;render()}});
+
+$('cards').innerHTML=SERVICES.map(s=>'<div class="card"><h3>'+s.n+'</h3><p>'+s.d+'</p><span class="dur">'+s.t+'</span></div>').join('');
+$('fserv').innerHTML=SERVICES.map(s=>'<option>'+s.n+'</option>').join('');
+const order=[1,2,3,4,5,6,0];
+$('hours').innerHTML=order.map(i=>'<tr'+(today.getDay()===i?' class="today"':'')+'><td>'+DAYS[i][0].toUpperCase()+DAYS[i].slice(1)+'</td><td>'+(i===0?'Fermé':'10h00 – 19h00')+'</td></tr>').join('');
+
+$('grid').addEventListener('click',e=>{
+  const b=e.target.closest('.s:not(.taken)');if(!b)return;
+  picked={d:b.dataset.d,t:b.dataset.t};
+  $('fwhen').textContent=longDate(picked.d)+' à '+picked.t;
+  $('fbody').hidden=false;$('fdone').hidden=true;$('ferr').textContent='';
+  try{const saved=JSON.parse(localStorage.getItem('thebox-me')||'{}');if(saved.n&&!$('fname').value)$('fname').value=saved.n;if(saved.p&&!$('fphone').value)$('fphone').value=saved.p}catch(_){}
+  $('dlg').showModal();$('fname').focus();
+});
+$('fcancel').onclick=()=>$('dlg').close();
+$('fclose').onclick=()=>$('dlg').close();
+
+$('form').addEventListener('submit',async e=>{
+  e.preventDefault();
+  const name=$('fname').value.trim(),phone=$('fphone').value.trim(),serv=$('fserv').value;
+  if(!name||!phone){$('ferr').textContent='Merci d\'indiquer votre nom et votre téléphone.';return}
+  if(!db){$('ferr').textContent='La réservation en ligne n\'est pas disponible pour le moment. Merci de contacter le salon.';return}
+  if(!canWrite){$('ferr').textContent='Votre accès à cette page ne permet pas de réserver en ligne. Merci de contacter le salon.';return}
+  const id=picked.d+'_'+picked.t.replace(':','');
+  $('fsubmit').disabled=true;$('ferr').textContent='';
+  try{
+    const ref=db.doc('slots/'+id);
+    const lease=await ref.acquire({holder:'b'+Math.random().toString(36).slice(2),ttlMs:5000});
+    if(!lease.acquired)throw{code:'busy'};
+    const cur=await ref.get();
+    if(cur.exists&&cur.data()?.taken)throw{code:'busy'};
+    const uid=user?await user.id():null;
+    if(!uid)throw{code:'invalid_argument'};
+    await ref.set({d:picked.d,t:picked.t,taken:true,uid});
+    const mine=db.doc('bookings/'+uid);const prev=await mine.get();
+    const items={...(prev.exists?(prev.data()?.items||{}):{})};
+    items[id]={d:picked.d,t:picked.t,name,phone,service:serv,created:new Date().toISOString()};
+    await mine.set({items});
+    try{localStorage.setItem('thebox-me',JSON.stringify({n:name,p:phone}))}catch(_){}
+    taken.add(id);render();
+    $('fdonetxt').textContent=serv+' · '+longDate(picked.d)+' à '+picked.t+'. À bientôt chez The Box !';
+    $('fbody').hidden=true;$('fdone').hidden=false;
+  }catch(err){
+    if(err&&err.code==='busy'){$('ferr').textContent='Désolé, ce créneau vient d\'être pris. Choisissez-en un autre.';taken.add(id);render()}
+    else if(err&&err.code==='invalid_argument'){canWrite=false;$('ferr').textContent='Votre accès à cette page ne permet pas de réserver en ligne. Merci de contacter le salon.'}
+    else $('ferr').textContent='La réservation n\'a pas pu être enregistrée. Réessayez dans un instant.';
+  }finally{$('fsubmit').disabled=false}
+});
+
+render();
+setInterval(render,60000);
+
+async function start(){
+  db=await window.claude?.use?.('db').catch(()=>null)??null;
+  user=await window.claude?.use?.('user').catch(()=>null)??null;
+  if(!db){$('status').textContent='Planning hors ligne : les créneaux déjà pris ne peuvent pas être affichés.';return}
+  try{const c=await user?.can?.('data.write');if(c===false)canWrite=false}catch(_){}
+  const timer=setTimeout(()=>{$('status').textContent='Chargement des disponibilités…'},10000);
+  db.collection('slots').where('d','>=',iso(today)).onSnapshot(snap=>{
+    if(!snap.metadata.fromCache){clearTimeout(timer);$('status').textContent=''}
+    taken=new Set(snap.docs.filter(x=>x.data()?.taken).map(x=>x.id));render();
+  },()=>{clearTimeout(timer);$('status').textContent='Impossible de charger les disponibilités pour le moment.'});
+  let admin=false;try{admin=(await user?.canEdit?.())||(await user?.isOwner?.())||false}catch(_){}
+  if(!admin)return;
+  $('admin').classList.add('on');
+  db.collection('bookings').onSnapshot(snap=>{
+    const rows=[];const t0=iso(today);
+    for(const x of snap.docs){const it=x.data()?.items||{};for(const k in it){const r=it[k];if(r&&String(r.d)>=t0)rows.push({id:k,owner:x.id,...r})}}
+    rows.sort((a,b)=>(String(a.d)+a.t).localeCompare(String(b.d)+b.t));
+    $('blist').innerHTML=rows.length?rows.map(r=>'<li><span class="when">'+esc(longDate(String(r.d)))+' · '+esc(r.t)+'</span><span class="who">'+esc(r.name)+'<small>'+esc(r.phone)+' · '+esc(r.service)+'</small></span><button class="btn ghost" data-cancel="'+esc(r.id)+'" data-owner="'+esc(r.owner)+'">Annuler</button></li>').join('')
+      :'<li><span class="who">Aucun rendez-vous pour l\'instant.</span></li>';
+  },()=>{$('blist').innerHTML='<li><span class="who">Impossible de charger les rendez-vous.</span></li>'});
+  $('blist').addEventListener('click',async e=>{
+    const b=e.target.closest('[data-cancel]');if(!b)return;
+    if(b.dataset.armed!=='1'){b.dataset.armed='1';b.textContent='Confirmer l\'annulation';return}
+    b.disabled=true;const id=b.dataset.cancel;
+    try{
+      const ref=db.doc('bookings/'+b.dataset.owner);const cur=await ref.get();
+      const items={...(cur.exists?(cur.data()?.items||{}):{})};delete items[id];
+      await ref.set({items});await db.doc('slots/'+id).delete();taken.delete(id);render()}
+    catch(_){b.disabled=false;b.textContent='Erreur, réessayer'}
+  });
+}
+start();
+}
+</script>
+</body>
+</html>
