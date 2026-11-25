@@ -74,6 +74,14 @@ textarea{width:100%;min-height:70px;font:16px Inter,sans-serif;padding:8px 12px;
 .shopbtn .num{flex:none;width:44px;height:44px;border-radius:50%;background:var(--red);color:#fff;display:grid;place-items:center;font:600 20px Oswald,sans-serif}
 .shopbtn div{flex:1}.shopbtn b{display:block;font-size:17px}.shopbtn span{color:#666;font-size:14px}
 .shopbtn em{font-style:normal;font-weight:600;background:#1b1b1b;color:#fff;border-radius:8px;padding:9px 16px;white-space:nowrap}
+.barbers{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(200px,100%),1fr));gap:10px;padding:10px 0 14px}
+.barber{display:flex;align-items:center;gap:12px;min-height:60px;border:1px solid #e3e3e3;border-radius:12px;background:#fff;color:#1b1b1b;padding:10px 14px;cursor:pointer;font:500 16px Inter,sans-serif;text-align:left}
+.barber:hover{border-color:#999}
+.barber .av{flex:none;width:38px;height:38px;border-radius:50%;background:#1b1b1b;color:#fff;display:grid;place-items:center;font:600 16px Oswald,sans-serif}
+.barber .av.any{background:#f1f1f1;color:#1b1b1b}
+.barber span.nm{flex:1}
+.barber .rd{flex:none;width:20px;height:20px;border-radius:50%;border:2px solid #bbb}
+.barber.on{border:2px solid #1b1b1b;padding:9px 13px}.barber.on .rd{border:6px solid #1b1b1b}
 .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(240px,100%),1fr));gap:16px;margin-top:24px}
 .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:22px}
 .card h3{font-size:24px}.card p{color:var(--mute);margin:8px 0 0}
@@ -135,16 +143,24 @@ input,select{width:100%;min-height:44px;font:16px Inter,sans-serif;padding:8px 1
     <h2>2. Choix du salon</h2>
     <div id="shoplist"></div>
   </div>
+  <div class="svcs" id="stepBarber" hidden>
+    <div class="chosen" style="margin-top:16px"><div><b id="cname2"></b><span id="cmeta2"></span></div><button type="button" class="chg-svc">Modifier</button></div>
+    <div class="chosen"><div><b id="sname2"></b><span id="saddr2"></span></div><button type="button" class="chg-shop">Changer de salon</button></div>
+    <h2>3. Choisir avec qui ?</h2>
+    <div class="barbers" id="barberlist" role="radiogroup" aria-label="Coiffeur"></div>
+    <div style="padding:6px 0 18px"><button type="button" class="btn" id="barberGo" style="width:100%">Voir les horaires</button></div>
+  </div>
   <div class="planner" id="step2" style="margin-top:28px" hidden>
     <div class="chosen"><div><b id="cname"></b><span id="cmeta"></span></div><button type="button" class="chg-svc">Modifier</button></div>
-    <div class="chosen"><div><b id="sname"></b><span id="saddr"></span></div><button type="button" id="chgShop">Changer de salon</button></div>
+    <div class="chosen"><div><b id="sname"></b><span id="saddr"></span></div><button type="button" class="chg-shop">Changer de salon</button></div>
+    <div class="chosen" id="barberBar" hidden><div><b id="bname"></b><span id="bsub"></span></div><button type="button" id="chgBarber">Changer</button></div>
     <div class="ph">
       <button class="arrow" id="prev" aria-label="Semaine précédente">‹</button>
       <div class="wk" id="wk"></div>
       <button class="arrow" id="next" aria-label="Semaine suivante">›</button>
     </div>
     <div class="grid" id="grid"></div>
-    <div class="legend"><span>3. Cliquez sur un horaire pour réserver</span><span><s>10:00</s> indisponible</span></div>
+    <div class="legend"><span>Cliquez sur un horaire pour réserver</span><span><s>10:00</s> indisponible</span></div>
     <div class="status" id="status" role="status"></div>
   </div>
 </div></section>
@@ -230,6 +246,7 @@ input,select{width:100%;min-height:44px;font:16px Inter,sans-serif;padding:8px 1
     <input id="fphone" type="tel" autocomplete="tel" required maxlength="20" pattern="[0-9 +().\-]{8,20}" placeholder="06 12 34 56 78">
     <label for="fnote">Précisions <span style="font-weight:400;color:#777">(facultatif)</span></label>
     <textarea id="fnote" maxlength="300" placeholder="Ex. : dégradé, motif souhaité…"></textarea>
+    <p style="font-size:13px;color:#666;margin:10px 0 0">Vous recevrez un SMS de rappel la veille de votre rendez-vous.</p>
     <div class="err" id="ferr"></div>
     <div class="row"><button type="button" class="btn ghost" id="fcancel">Annuler</button><button class="btn" id="fsubmit">Confirmer</button></div>
   </div>
@@ -243,62 +260,90 @@ input,select{width:100%;min-height:44px;font:16px Inter,sans-serif;padding:8px 1
 
 <script type="module">
 import { firebaseConfig } from './firebase-config.js';
-import { SERVICES, SHOPS, OPEN_HOUR, CLOSE_HOUR, CLOSED_DAYS, slotsFor } from './salon.js';
+import { SERVICES, SHOPS, OPEN_HOUR, CLOSE_HOUR, CLOSED_DAYS, slotsFor, works } from './salon.js';
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import { getFirestore, collection, query, where, onSnapshot, doc, writeBatch } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
 const DAYS=['dimanche','lundi','mardi','mercredi','jeudi','vendredi','samedi'];
 const MONTHS=['janv.','févr.','mars','avr.','mai','juin','juil.','août','sept.','oct.','nov.','déc.'];
-const OPEN=d=>!CLOSED_DAYS.includes(d.getDay());
 const SLOTS=[];for(let h=OPEN_HOUR;h<CLOSE_HOUR;h++){SLOTS.push(String(h).padStart(2,'0')+':00',String(h).padStart(2,'0')+':30')}
 const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const iso=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
 const fmt=d=>d.getDate().toString().padStart(2,'0')+' '+MONTHS[d.getMonth()];
 const fromIso=s=>{const[y,m,dd]=s.split('-').map(Number);return new Date(y,m-1,dd)};
 const longDate=s=>{const d=fromIso(s);return DAYS[d.getDay()]+' '+d.getDate()+' '+MONTHS[d.getMonth()]};
 const hh=h=>String(h).padStart(2,'0')+'h00';
-const sid=(d,t)=>d+'_'+t.replace(':','');
+/* identifiant d'un créneau : date_heure, + _coiffeur quand le salon a des coiffeurs */
+const sid=(d,t,b)=>d+'_'+t.replace(':','')+(b?'_'+b:'');
 const dur=m=>m<60?m+'min':Math.floor(m/60)+'h'+(m%60?String(m%60).padStart(2,'0'):'');
 
-let week=0,taken=new Set(),db=null,picked=null,service=null,shop=null,unsub=null,loaded=false;
-const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let week=0,taken=new Set(),db=null,picked=null,service=null,shop=null,barber=null,unsub=null,loaded=false;
+/* barber : null = salon sans coiffeurs, 'any' = sans préférence, sinon l'objet coiffeur */
 const today=new Date();today.setHours(0,0,0,0);
+const team=()=>(shop&&shop.barbers)||[];
+
+/* navigation entre les étapes */
+const STEPS=['step1','stepShop','stepBarber','step2'];
+function show(step){for(const id of STEPS)$(id).hidden=id!==step;$(step).scrollIntoView({behavior:'smooth',block:'start'})}
+function nextAfterService(){if(!shop)return show('stepShop');if(team().length&&!barber)return openBarbers();show('step2');render()}
+function restart(){service=null;shop=null;barber=null;show('step1')}
+document.querySelectorAll('.chg-svc').forEach(b=>b.onclick=()=>show('step1'));
+document.querySelectorAll('.chg-shop').forEach(b=>b.onclick=()=>show('stepShop'));
+document.querySelectorAll('a[href="#reserver"]').forEach(a=>a.addEventListener('click',()=>{if($('step1').hidden)restart()}));
+function fillSummaries(){
+  for(const k of ['','1','2'])if(service){$('cname'+k).textContent=service.n;$('cmeta'+k).textContent=dur(service.dur)+' · '+service.p}
+  for(const k of ['','2'])if(shop){$('sname'+k).textContent=shop.name;$('saddr'+k).textContent=shop.addr}
+  $('barberBar').hidden=!team().length||!barber;
+  if(barber){$('bname').textContent=barber==='any'?'Sans préférence':'Avec '+barber.name;$('bsub').textContent=barber==='any'?'Le premier coiffeur disponible à l\'horaire choisi':'Horaires disponibles de '+barber.name}
+}
 
 /* Étape 1 : prestations */
 $('svlist').innerHTML=SERVICES.map((s,i)=>'<div class="sv"><span class="nm">'+s.n+'</span><span class="meta"><span>'+dur(s.dur)+'</span>·<b>'+s.p+'</b></span><button class="btn" data-i="'+i+'">Choisir</button></div>').join('');
 $('svlist').addEventListener('click',e=>{
   const b=e.target.closest('[data-i]');if(!b)return;
-  service=SERVICES[+b.dataset.i];
-  for(const k of ['','1']){$('cname'+k).textContent=service.n;$('cmeta'+k).textContent=dur(service.dur)+' · '+service.p}
-  show(shop?'step2':'stepShop');render();
+  service=SERVICES[+b.dataset.i];fillSummaries();nextAfterService();
 });
-function show(step){
-  for(const id of ['step1','stepShop','step2'])$(id).hidden=id!==step;
-  $(step).scrollIntoView({behavior:'smooth',block:'start'});
-}
-function restart(){service=null;shop=null;show('step1')}
-document.querySelectorAll('.chg-svc').forEach(b=>b.onclick=()=>show('step1'));
-document.querySelectorAll('a[href="#reserver"]').forEach(a=>a.addEventListener('click',()=>{if($('step1').hidden)restart()}));
 
 /* Étape 2 : salon */
 $('shoplist').innerHTML=SHOPS.map((x,i)=>'<button type="button" class="shopbtn" data-s="'+i+'"><span class="num">'+(i+1)+'</span><div><b>'+esc(x.name)+'</b><span>'+esc(x.addr)+'</span></div><em>Choisir</em></button>').join('');
 $('shoplist').addEventListener('click',e=>{
   const b=e.target.closest('[data-s]');if(!b)return;
   const next=SHOPS[+b.dataset.s];
-  if(!shop||shop.id!==next.id){shop=next;taken=new Set();loaded=false;listen()}
-  $('sname').textContent=shop.name;$('saddr').textContent=shop.addr;
-  show('step2');render();
+  if(!shop||shop.id!==next.id){shop=next;barber=null;taken=new Set();loaded=false;listen()}
+  fillSummaries();
+  if(team().length)openBarbers();else{show('step2');render()}
 });
-$('chgShop').onclick=()=>show('stepShop');
 
-/* Étape 2 : agenda */
-function freeAt(k,i,n){
+/* Étape 3 : coiffeur */
+let choice='any';
+function drawBarbers(){
+  const opts=[{id:'any',name:'Sans préférence'}].concat(team());
+  $('barberlist').innerHTML=opts.map(x=>'<button type="button" role="radio" aria-checked="'+(choice===x.id)+'" class="barber'+(choice===x.id?' on':'')+'" data-b="'+esc(x.id)+'"><span class="av'+(x.id==='any'?' any':'')+'">'+(x.id==='any'?'★':esc(x.name[0]))+'</span><span class="nm">'+esc(x.name)+'</span><span class="rd"></span></button>').join('');
+}
+function openBarbers(){choice=barber&&barber!=='any'?barber.id:'any';drawBarbers();fillSummaries();show('stepBarber')}
+$('barberlist').addEventListener('click',e=>{const b=e.target.closest('[data-b]');if(!b)return;choice=b.dataset.b;drawBarbers()});
+$('barberlist').addEventListener('dblclick',e=>{if(e.target.closest('[data-b]'))$('barberGo').click()});
+$('barberGo').onclick=()=>{barber=choice==='any'?'any':team().find(x=>x.id===choice);fillSummaries();show('step2');render()};
+$('chgBarber').onclick=openBarbers;
+
+/* disponibilités */
+function freeFor(b,k,i,n){ // b : objet coiffeur ou null
   if(i+n>SLOTS.length)return false;
-  for(let j=0;j<n;j++)if(taken.has(sid(k,SLOTS[i+j])))return false;
+  if(b&&!works(b,fromIso(k)))return false;
+  for(let j=0;j<n;j++)if(taken.has(sid(k,SLOTS[i+j],b&&b.id)))return false;
   return true;
 }
+function candidates(k,i,n){
+  if(!team().length)return freeFor(null,k,i,n)?[null]:[];
+  if(barber==='any')return team().filter(b=>freeFor(b,k,i,n));
+  return barber&&freeFor(barber,k,i,n)?[barber]:[];
+}
+function loadOf(b,k){let c=0;for(const id of taken)if(id.startsWith(k+'_')&&id.endsWith('_'+b.id))c++;return c}
+
+/* Étape 4 : agenda */
 function render(){
-  if(!service||!shop)return;
+  if(!service||!shop||(team().length&&!barber))return;
   const n=slotsFor(service);
   const start=new Date(today);start.setDate(start.getDate()+week*7);
   const end=new Date(start);end.setDate(end.getDate()+6);
@@ -309,13 +354,14 @@ function render(){
   for(let i=0;i<7;i++){
     const d=new Date(start);d.setDate(d.getDate()+i);const k=iso(d);
     html+='<div class="day"><div class="dh"><b>'+DAYS[d.getDay()]+'</b><span>'+fmt(d)+'</span></div>';
-    if(!OPEN(d)){html+='<div class="closed">Fermé</div>'}
+    if(CLOSED_DAYS.includes(d.getDay())){html+='<div class="closed">Fermé</div>'}
+    else if(barber&&barber!=='any'&&!works(barber,d)){html+='<div class="closed">'+esc(barber.name)+' ne travaille pas</div>'}
     else{
       let shown=0;
       SLOTS.forEach((t,idx)=>{
         const x=new Date(d);x.setHours(+t.slice(0,2),+t.slice(3));if(x<=now)return;
         shown++;
-        html+=freeAt(k,idx,n)?'<button class="s" data-d="'+k+'" data-t="'+t+'">'+t+'</button>'
+        html+=candidates(k,idx,n).length?'<button class="s" data-d="'+k+'" data-t="'+t+'">'+t+'</button>'
           :'<button class="s taken" disabled aria-label="'+t+' indisponible">'+t+'</button>';
       });
       if(!shown)html+='<div class="closed">Plus de créneau</div>';
@@ -327,16 +373,17 @@ function render(){
 
 $('prev').onclick=()=>{if(week>0){week--;render()}};
 $('next').onclick=()=>{if(week<7){week++;render()}};
-document.addEventListener('keydown',e=>{if($('dlg').open||!service||$('step2').hidden)return;if(e.key==='ArrowLeft'&&week>0){week--;render()}if(e.key==='ArrowRight'&&week<7){week++;render()}});
+document.addEventListener('keydown',e=>{if($('dlg').open||$('step2').hidden)return;if(e.key==='ArrowLeft'&&week>0){week--;render()}if(e.key==='ArrowRight'&&week<7){week++;render()}});
 
 const order=[1,2,3,4,5,6,0];
 $('hours').innerHTML=order.map(i=>'<tr'+(today.getDay()===i?' class="today"':'')+'><td>'+DAYS[i][0].toUpperCase()+DAYS[i].slice(1)+'</td><td>'+(CLOSED_DAYS.includes(i)?'Fermé':hh(OPEN_HOUR)+' – '+hh(CLOSE_HOUR))+'</td></tr>').join('');
 
-/* Étape 3 : coordonnées */
+/* Étape 5 : coordonnées */
+const withTxt=()=>!team().length?'':barber==='any'?' · sans préférence de coiffeur':' · avec '+barber.name;
 $('grid').addEventListener('click',e=>{
   const b=e.target.closest('.s:not(.taken)');if(!b)return;
   picked={d:b.dataset.d,t:b.dataset.t};
-  $('fwhen').textContent=service.n+' · '+longDate(picked.d)+' à '+picked.t+' · '+shop.name+', '+shop.addr;
+  $('fwhen').textContent=service.n+withTxt()+' · '+longDate(picked.d)+' à '+picked.t+' · '+shop.name+', '+shop.addr;
   $('fbody').hidden=false;$('fdone').hidden=true;$('ferr').textContent='';
   try{const saved=JSON.parse(localStorage.getItem('thebox-me')||'{}');
     for(const [k,id] of [['f','ffirst'],['l','flast'],['p','fphone']])if(saved[k]&&!$(id).value)$(id).value=saved[k]}catch(_){}
@@ -352,25 +399,31 @@ $('form').addEventListener('submit',async e=>{
   if(!/^[0-9 +().-]{8,20}$/.test(phone)){$('ferr').textContent='Le numéro de téléphone ne semble pas valide.';return}
   if(!db){$('ferr').textContent='La réservation en ligne n\'est pas encore disponible. Merci de contacter le salon.';return}
   const n=slotsFor(service),idx=SLOTS.indexOf(picked.t);
-  if(!freeAt(picked.d,idx,n)){$('ferr').textContent='Désolé, ce créneau n\'est plus libre. Choisissez-en un autre.';return}
-  const id=sid(picked.d,picked.t);
+  // « sans préférence » : le coiffeur libre le moins chargé ce jour-là
+  const cands=candidates(picked.d,idx,n).sort((a,b)=>a?loadOf(a,picked.d)-loadOf(b,picked.d):0);
+  if(!cands.length){$('ferr').textContent='Désolé, ce créneau n\'est plus libre. Choisissez-en un autre.';return}
   $('fsubmit').disabled=true;$('ferr').textContent='';
-  try{
-    const batch=writeBatch(db);
-    for(let j=0;j<n;j++){const t=SLOTS[idx+j];batch.set(doc(db,'shops',shop.id,'slots',sid(picked.d,t)),{d:picked.d,t,taken:true})}
-    const data={d:picked.d,t:picked.t,name:(first+' '+last).slice(0,60),phone,service:service.n,status:'ok',created:new Date().toISOString()};
-    if(note)data.note=note;
-    batch.set(doc(db,'shops',shop.id,'bookings',id),data);
-    await batch.commit();
-    try{localStorage.setItem('thebox-me',JSON.stringify({f:first,l:last,p:phone}))}catch(_){}
-    for(let j=0;j<n;j++)taken.add(sid(picked.d,SLOTS[idx+j]));render();
-    $('fnote').value='';
-    $('fdonetxt').textContent=service.n+' · '+longDate(picked.d)+' à '+picked.t+', au '+shop.addr+'. À bientôt chez The Box, '+first+' !';
-    $('fbody').hidden=true;$('fdone').hidden=false;
-  }catch(err){
-    if(err&&err.code==='permission-denied'){$('ferr').textContent='Désolé, ce créneau vient d\'être pris. Choisissez-en un autre.'}
-    else $('ferr').textContent='La réservation n\'a pas pu être enregistrée. Vérifiez votre connexion et réessayez.';
-  }finally{$('fsubmit').disabled=false}
+  let lastErr=null;
+  for(const who of cands){
+    const bid=who&&who.id;
+    try{
+      const batch=writeBatch(db);
+      for(let j=0;j<n;j++){const t=SLOTS[idx+j];batch.set(doc(db,'shops',shop.id,'slots',sid(picked.d,t,bid)),{d:picked.d,t,taken:true})}
+      const data={d:picked.d,t:picked.t,name:(first+' '+last).slice(0,60),phone,service:service.n,status:'ok',created:new Date().toISOString()};
+      if(bid)data.barber=bid;
+      if(note)data.note=note;
+      batch.set(doc(db,'shops',shop.id,'bookings',sid(picked.d,picked.t,bid)),data);
+      await batch.commit();
+      try{localStorage.setItem('thebox-me',JSON.stringify({f:first,l:last,p:phone}))}catch(_){}
+      for(let j=0;j<n;j++)taken.add(sid(picked.d,SLOTS[idx+j],bid));render();
+      $('fnote').value='';
+      $('fdonetxt').textContent=service.n+(who?' avec '+who.name:'')+' · '+longDate(picked.d)+' à '+picked.t+', au '+shop.addr+'. À bientôt chez The Box, '+first+' !';
+      $('fbody').hidden=true;$('fdone').hidden=false;$('fsubmit').disabled=false;
+      return;
+    }catch(err){lastErr=err;if(!(err&&err.code==='permission-denied'))break}
+  }
+  $('fsubmit').disabled=false;
+  $('ferr').textContent=lastErr&&lastErr.code==='permission-denied'?'Désolé, ce créneau vient d\'être pris. Choisissez-en un autre.':'La réservation n\'a pas pu être enregistrée. Vérifiez votre connexion et réessayez.';
 });
 
 setInterval(render,60000);
