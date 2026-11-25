@@ -65,6 +65,15 @@ nav a.l:hover{color:var(--ink)}
 .chosen button{min-height:40px;border:1px solid #ccc;background:#fff;border-radius:8px;padding:0 14px;font:600 15px Inter,sans-serif;cursor:pointer;color:#1b1b1b}
 .two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0 10px}
 textarea{width:100%;min-height:70px;font:16px Inter,sans-serif;padding:8px 12px;border:1px solid #ccc;border-radius:8px;resize:vertical;background:#fff;color:#1b1b1b}
+.shops{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(300px,100%),1fr));gap:16px;margin-top:16px}
+.shopcard{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:20px}
+.shopcard h3{font-size:24px}
+.shopcard .links .btn{min-height:40px;padding:0 14px}
+.shopbtn{display:flex;align-items:center;gap:14px;width:100%;text-align:left;background:#fff;border:1px solid #e3e3e3;border-radius:12px;padding:16px;margin:10px 0;cursor:pointer;font:inherit;color:#1b1b1b}
+.shopbtn:hover{border-color:#1b1b1b}
+.shopbtn .num{flex:none;width:44px;height:44px;border-radius:50%;background:var(--red);color:#fff;display:grid;place-items:center;font:600 20px Oswald,sans-serif}
+.shopbtn div{flex:1}.shopbtn b{display:block;font-size:17px}.shopbtn span{color:#666;font-size:14px}
+.shopbtn em{font-style:normal;font-weight:600;background:#1b1b1b;color:#fff;border-radius:8px;padding:9px 16px;white-space:nowrap}
 .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(240px,100%),1fr));gap:16px;margin-top:24px}
 .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:22px}
 .card h3{font-size:24px}.card p{color:var(--mute);margin:8px 0 0}
@@ -101,7 +110,7 @@ input,select{width:100%;min-height:44px;font:16px Inter,sans-serif;padding:8px 1
   <a class="brand" href="#top">The Box</a>
   <a class="l" href="#reserver">Réserver</a>
   <a class="l" href="#reserver">Prestations</a>
-  <a class="l" href="#salon">Accès</a>
+  <a class="l" href="#salon">Nos salons</a>
   <a class="l" href="#horaires">Horaires</a>
   <a class="btn" href="#reserver">Prendre RDV</a>
 </nav></header>
@@ -113,7 +122,7 @@ input,select{width:100%;min-height:44px;font:16px Inter,sans-serif;padding:8px 1
     <img src="logo.png" alt="Logo The Box Barber Shop">
     <div>
       <h1>Réservez votre rendez-vous chez The Box</h1>
-      <p>Choisissez votre prestation, puis un horaire libre. Paiement sur place, confirmation immédiate.</p>
+      <p>Choisissez votre prestation, votre salon, puis un horaire libre. Paiement sur place, confirmation immédiate.</p>
       <div class="facts"><span><b>Lun – Sam</b> 8h00 – 20h00</span><span><b>Dimanche</b> fermé</span></div>
     </div>
   </div>
@@ -121,24 +130,30 @@ input,select{width:100%;min-height:44px;font:16px Inter,sans-serif;padding:8px 1
     <h2>1. Choix de la prestation</h2>
     <div id="svlist"></div>
   </div>
+  <div class="svcs" id="stepShop" hidden>
+    <div class="chosen" style="margin-top:16px"><div><b id="cname1"></b><span id="cmeta1"></span></div><button type="button" class="chg-svc">Modifier</button></div>
+    <h2>2. Choix du salon</h2>
+    <div id="shoplist"></div>
+  </div>
   <div class="planner" id="step2" style="margin-top:28px" hidden>
-    <div class="chosen"><div><b id="cname"></b><span id="cmeta"></span></div><button type="button" id="change">Modifier</button></div>
+    <div class="chosen"><div><b id="cname"></b><span id="cmeta"></span></div><button type="button" class="chg-svc">Modifier</button></div>
+    <div class="chosen"><div><b id="sname"></b><span id="saddr"></span></div><button type="button" id="chgShop">Changer de salon</button></div>
     <div class="ph">
       <button class="arrow" id="prev" aria-label="Semaine précédente">‹</button>
       <div class="wk" id="wk"></div>
       <button class="arrow" id="next" aria-label="Semaine suivante">›</button>
     </div>
     <div class="grid" id="grid"></div>
-    <div class="legend"><span>2. Cliquez sur un horaire pour réserver</span><span><s>10:00</s> indisponible</span></div>
+    <div class="legend"><span>3. Cliquez sur un horaire pour réserver</span><span><s>10:00</s> indisponible</span></div>
     <div class="status" id="status" role="status"></div>
   </div>
 </div></section>
 
 <section class="band" id="salon"><div class="wrap">
-  <h2>Où se situe le salon ?</h2>
-  <div class="addr"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--red2)" stroke-width="2" aria-hidden="true"><path d="M12 22s7-6.2 7-12a7 7 0 1 0-14 0c0 5.8 7 12 7 12z"/><circle cx="12" cy="10" r="2.5"/></svg>6 Rue du Général Leclerc, 76000 Rouen</div>
+  <h2>Où se situent nos salons ?</h2>
+  <p style="color:var(--mute);margin:8px 0 0">Deux salons dans la même rue, à quelques pas l'un de l'autre.</p>
   <div class="map">
-    <svg viewBox="0 0 800 450" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Plan du quartier : le salon est rue du Général Leclerc, au nord de la Seine">
+    <svg viewBox="0 0 800 450" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Plan du quartier : les deux salons sont rue du Général Leclerc, au nord de la Seine">
       <rect width="800" height="450" fill="#eef0ec"/>
       <g fill="#dfe8d6"><rect x="40" y="40" width="120" height="80" rx="10"/><rect x="600" y="60" width="140" height="70" rx="10"/><rect x="520" y="360" width="160" height="60" rx="10"/></g>
       <path d="M-20 330 C 150 280, 260 300, 400 330 S 650 380, 820 330" stroke="#a9cbe8" stroke-width="46" fill="none"/>
@@ -151,17 +166,33 @@ input,select{width:100%;min-height:44px;font:16px Inter,sans-serif;padding:8px 1
       </g>
       <text x="40" y="165" font-family="Inter,sans-serif" font-size="15" fill="#6b6b6b">Rue du Général Leclerc</text>
       <text x="610" y="402" font-family="Inter,sans-serif" font-size="15" fill="#5a86ad" font-style="italic">La Seine</text>
-      <ellipse cx="420" cy="178" rx="14" ry="5" fill="#000" opacity=".2"/>
-      <path d="M420 176 C 420 176, 396 146, 396 128 a24 24 0 1 1 48 0 C 444 146, 420 176, 420 176z" fill="#e0262b" stroke="#fff" stroke-width="3"/>
-      <circle cx="420" cy="128" r="8" fill="#fff"/>
-      <rect x="452" y="108" width="98" height="34" rx="8" fill="#000"/>
-      <text x="501" y="131" text-anchor="middle" font-family="Oswald,sans-serif" font-size="17" fill="#fff">THE BOX</text>
+      <ellipse cx="360" cy="178" rx="14" ry="5" fill="#000" opacity=".2"/>
+      <path d="M360 176 C 360 176, 336 146, 336 128 a24 24 0 1 1 48 0 C 384 146, 360 176, 360 176z" fill="#e0262b" stroke="#fff" stroke-width="3"/>
+      <text x="360" y="135" text-anchor="middle" font-family="Oswald,sans-serif" font-size="20" font-weight="600" fill="#fff">1</text>
+      <ellipse cx="560" cy="178" rx="14" ry="5" fill="#000" opacity=".2"/>
+      <path d="M560 176 C 560 176, 536 146, 536 128 a24 24 0 1 1 48 0 C 584 146, 560 176, 560 176z" fill="#e0262b" stroke="#fff" stroke-width="3"/>
+      <text x="560" y="135" text-anchor="middle" font-family="Oswald,sans-serif" font-size="20" font-weight="600" fill="#fff">2</text>
     </svg>
-    <a class="btn go" href="https://www.google.com/maps/search/?api=1&amp;query=6%20Rue%20du%20G%C3%A9n%C3%A9ral%20Leclerc%2076000%20Rouen" target="_blank" rel="noopener">Afficher la carte</a>
   </div>
-  <div class="links">
-    <a class="btn ghost" href="https://www.google.com/maps/dir/?api=1&amp;destination=6%20Rue%20du%20G%C3%A9n%C3%A9ral%20Leclerc%2076000%20Rouen" target="_blank" rel="noopener">Itinéraire Google Maps</a>
-    <a class="btn ghost" href="https://waze.com/ul?q=6%20Rue%20du%20G%C3%A9n%C3%A9ral%20Leclerc%2076000%20Rouen&amp;navigate=yes" target="_blank" rel="noopener">Ouvrir dans Waze</a>
+  <div class="shops">
+  <div class="shopcard">
+    <h3>Salon 1</h3>
+    <div class="addr"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--red2)" stroke-width="2" aria-hidden="true"><path d="M12 22s7-6.2 7-12a7 7 0 1 0-14 0c0 5.8 7 12 7 12z"/><circle cx="12" cy="10" r="2.5"/></svg>6 Rue du Général Leclerc, 76000 Rouen</div>
+    <div class="links">
+      <a class="btn ghost" href="https://www.google.com/maps/search/?api=1&amp;query=6%20Rue%20du%20G%C3%A9n%C3%A9ral%20Leclerc%2076000%20Rouen" target="_blank" rel="noopener">Voir sur la carte</a>
+      <a class="btn ghost" href="https://www.google.com/maps/dir/?api=1&amp;destination=6%20Rue%20du%20G%C3%A9n%C3%A9ral%20Leclerc%2076000%20Rouen" target="_blank" rel="noopener">Itinéraire</a>
+      <a class="btn ghost" href="https://waze.com/ul?q=6%20Rue%20du%20G%C3%A9n%C3%A9ral%20Leclerc%2076000%20Rouen&amp;navigate=yes" target="_blank" rel="noopener">Waze</a>
+    </div>
+  </div>
+  <div class="shopcard">
+    <h3>Salon 2</h3>
+    <div class="addr"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--red2)" stroke-width="2" aria-hidden="true"><path d="M12 22s7-6.2 7-12a7 7 0 1 0-14 0c0 5.8 7 12 7 12z"/><circle cx="12" cy="10" r="2.5"/></svg>31 Rue du Général Leclerc, 76000 Rouen</div>
+    <div class="links">
+      <a class="btn ghost" href="https://www.google.com/maps/search/?api=1&amp;query=31%20Rue%20du%20G%C3%A9n%C3%A9ral%20Leclerc%2076000%20Rouen" target="_blank" rel="noopener">Voir sur la carte</a>
+      <a class="btn ghost" href="https://www.google.com/maps/dir/?api=1&amp;destination=31%20Rue%20du%20G%C3%A9n%C3%A9ral%20Leclerc%2076000%20Rouen" target="_blank" rel="noopener">Itinéraire</a>
+      <a class="btn ghost" href="https://waze.com/ul?q=31%20Rue%20du%20G%C3%A9n%C3%A9ral%20Leclerc%2076000%20Rouen&amp;navigate=yes" target="_blank" rel="noopener">Waze</a>
+    </div>
+  </div>
   </div>
 </div></section>
 
@@ -172,7 +203,7 @@ input,select{width:100%;min-height:44px;font:16px Inter,sans-serif;padding:8px 1
   </div>
   <div>
     <h2>Comment ça marche</h2>
-    <p style="color:var(--mute)">Choisissez votre prestation, puis un créneau libre dans le planning, remplissez vos coordonnées et confirmez. Le créneau disparaît aussitôt pour les autres clients. Merci d'arriver 5 minutes en avance ; en cas d'empêchement, prévenez le salon.</p>
+    <p style="color:var(--mute)">Choisissez votre prestation, votre salon, puis un créneau libre dans le planning, remplissez vos coordonnées et confirmez. Le créneau disparaît aussitôt pour les autres clients. Merci d'arriver 5 minutes en avance ; en cas d'empêchement, prévenez le salon.</p>
     <a class="btn" href="#reserver" style="margin-top:10px">Prendre rendez-vous</a>
   </div>
 </div></section>
@@ -182,7 +213,7 @@ input,select{width:100%;min-height:44px;font:16px Inter,sans-serif;padding:8px 1
 <footer class="band"><div class="wrap">
   <img src="logo.png" alt="" width="56" height="56">
   <span>The Box Barber Shop</span>
-  <span>6 Rue du Général Leclerc, 76000 Rouen</span>
+  <span>6 et 31 Rue du Général Leclerc, 76000 Rouen</span>
   <span>Lundi au samedi, 8h00 – 20h00</span>
   <a class="btn ghost" href="admin.html" style="margin-left:auto">Espace salon</a>
 </div></footer>
@@ -212,7 +243,7 @@ input,select{width:100%;min-height:44px;font:16px Inter,sans-serif;padding:8px 1
 
 <script type="module">
 import { firebaseConfig } from './firebase-config.js';
-import { SERVICES, OPEN_HOUR, CLOSE_HOUR, CLOSED_DAYS, slotsFor } from './salon.js';
+import { SERVICES, SHOPS, OPEN_HOUR, CLOSE_HOUR, CLOSED_DAYS, slotsFor } from './salon.js';
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import { getFirestore, collection, query, where, onSnapshot, doc, writeBatch } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
@@ -229,7 +260,8 @@ const hh=h=>String(h).padStart(2,'0')+'h00';
 const sid=(d,t)=>d+'_'+t.replace(':','');
 const dur=m=>m<60?m+'min':Math.floor(m/60)+'h'+(m%60?String(m%60).padStart(2,'0'):'');
 
-let week=0,taken=new Set(),db=null,picked=null,service=null;
+let week=0,taken=new Set(),db=null,picked=null,service=null,shop=null,unsub=null,loaded=false;
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const today=new Date();today.setHours(0,0,0,0);
 
 /* Étape 1 : prestations */
@@ -237,11 +269,27 @@ $('svlist').innerHTML=SERVICES.map((s,i)=>'<div class="sv"><span class="nm">'+s.
 $('svlist').addEventListener('click',e=>{
   const b=e.target.closest('[data-i]');if(!b)return;
   service=SERVICES[+b.dataset.i];
-  $('cname').textContent=service.n;$('cmeta').textContent=dur(service.dur)+' · '+service.p;
-  $('step1').hidden=true;$('step2').hidden=false;render();
-  $('step2').scrollIntoView({behavior:'smooth',block:'start'});
+  for(const k of ['','1']){$('cname'+k).textContent=service.n;$('cmeta'+k).textContent=dur(service.dur)+' · '+service.p}
+  show(shop?'step2':'stepShop');render();
 });
-$('change').onclick=()=>{service=null;$('step2').hidden=true;$('step1').hidden=false;$('step1').scrollIntoView({behavior:'smooth',block:'start'})};
+function show(step){
+  for(const id of ['step1','stepShop','step2'])$(id).hidden=id!==step;
+  $(step).scrollIntoView({behavior:'smooth',block:'start'});
+}
+function restart(){service=null;shop=null;show('step1')}
+document.querySelectorAll('.chg-svc').forEach(b=>b.onclick=()=>show('step1'));
+document.querySelectorAll('a[href="#reserver"]').forEach(a=>a.addEventListener('click',()=>{if($('step1').hidden)restart()}));
+
+/* Étape 2 : salon */
+$('shoplist').innerHTML=SHOPS.map((x,i)=>'<button type="button" class="shopbtn" data-s="'+i+'"><span class="num">'+(i+1)+'</span><div><b>'+esc(x.name)+'</b><span>'+esc(x.addr)+'</span></div><em>Choisir</em></button>').join('');
+$('shoplist').addEventListener('click',e=>{
+  const b=e.target.closest('[data-s]');if(!b)return;
+  const next=SHOPS[+b.dataset.s];
+  if(!shop||shop.id!==next.id){shop=next;taken=new Set();loaded=false;listen()}
+  $('sname').textContent=shop.name;$('saddr').textContent=shop.addr;
+  show('step2');render();
+});
+$('chgShop').onclick=()=>show('stepShop');
 
 /* Étape 2 : agenda */
 function freeAt(k,i,n){
@@ -250,7 +298,7 @@ function freeAt(k,i,n){
   return true;
 }
 function render(){
-  if(!service)return;
+  if(!service||!shop)return;
   const n=slotsFor(service);
   const start=new Date(today);start.setDate(start.getDate()+week*7);
   const end=new Date(start);end.setDate(end.getDate()+6);
@@ -279,7 +327,7 @@ function render(){
 
 $('prev').onclick=()=>{if(week>0){week--;render()}};
 $('next').onclick=()=>{if(week<7){week++;render()}};
-document.addEventListener('keydown',e=>{if($('dlg').open||!service)return;if(e.key==='ArrowLeft'&&week>0){week--;render()}if(e.key==='ArrowRight'&&week<7){week++;render()}});
+document.addEventListener('keydown',e=>{if($('dlg').open||!service||$('step2').hidden)return;if(e.key==='ArrowLeft'&&week>0){week--;render()}if(e.key==='ArrowRight'&&week<7){week++;render()}});
 
 const order=[1,2,3,4,5,6,0];
 $('hours').innerHTML=order.map(i=>'<tr'+(today.getDay()===i?' class="today"':'')+'><td>'+DAYS[i][0].toUpperCase()+DAYS[i].slice(1)+'</td><td>'+(CLOSED_DAYS.includes(i)?'Fermé':hh(OPEN_HOUR)+' – '+hh(CLOSE_HOUR))+'</td></tr>').join('');
@@ -288,7 +336,7 @@ $('hours').innerHTML=order.map(i=>'<tr'+(today.getDay()===i?' class="today"':'')
 $('grid').addEventListener('click',e=>{
   const b=e.target.closest('.s:not(.taken)');if(!b)return;
   picked={d:b.dataset.d,t:b.dataset.t};
-  $('fwhen').textContent=service.n+' · '+longDate(picked.d)+' à '+picked.t;
+  $('fwhen').textContent=service.n+' · '+longDate(picked.d)+' à '+picked.t+' · '+shop.name+', '+shop.addr;
   $('fbody').hidden=false;$('fdone').hidden=true;$('ferr').textContent='';
   try{const saved=JSON.parse(localStorage.getItem('thebox-me')||'{}');
     for(const [k,id] of [['f','ffirst'],['l','flast'],['p','fphone']])if(saved[k]&&!$(id).value)$(id).value=saved[k]}catch(_){}
@@ -309,15 +357,15 @@ $('form').addEventListener('submit',async e=>{
   $('fsubmit').disabled=true;$('ferr').textContent='';
   try{
     const batch=writeBatch(db);
-    for(let j=0;j<n;j++){const t=SLOTS[idx+j];batch.set(doc(db,'slots',sid(picked.d,t)),{d:picked.d,t,taken:true})}
+    for(let j=0;j<n;j++){const t=SLOTS[idx+j];batch.set(doc(db,'shops',shop.id,'slots',sid(picked.d,t)),{d:picked.d,t,taken:true})}
     const data={d:picked.d,t:picked.t,name:(first+' '+last).slice(0,60),phone,service:service.n,status:'ok',created:new Date().toISOString()};
     if(note)data.note=note;
-    batch.set(doc(db,'bookings',id),data);
+    batch.set(doc(db,'shops',shop.id,'bookings',id),data);
     await batch.commit();
     try{localStorage.setItem('thebox-me',JSON.stringify({f:first,l:last,p:phone}))}catch(_){}
     for(let j=0;j<n;j++)taken.add(sid(picked.d,SLOTS[idx+j]));render();
     $('fnote').value='';
-    $('fdonetxt').textContent=service.n+' · '+longDate(picked.d)+' à '+picked.t+'. À bientôt chez The Box, '+first+' !';
+    $('fdonetxt').textContent=service.n+' · '+longDate(picked.d)+' à '+picked.t+', au '+shop.addr+'. À bientôt chez The Box, '+first+' !';
     $('fbody').hidden=true;$('fdone').hidden=false;
   }catch(err){
     if(err&&err.code==='permission-denied'){$('ferr').textContent='Désolé, ce créneau vient d\'être pris. Choisissez-en un autre.'}
@@ -327,16 +375,24 @@ $('form').addEventListener('submit',async e=>{
 
 setInterval(render,60000);
 
+/* créneaux pris du salon choisi (un seul abonnement à la fois) */
+function listen(){
+  if(!db||!shop)return;
+  if(unsub){unsub();unsub=null}
+  const id=shop.id;
+  const timer=setTimeout(()=>{if(!loaded)$('status').textContent='Chargement des disponibilités…'},10000);
+  unsub=onSnapshot(query(collection(db,'shops',id,'slots'),where('d','>=',iso(today))),snap=>{
+    if(!shop||shop.id!==id)return;
+    clearTimeout(timer);loaded=true;$('status').textContent='';
+    taken=new Set(snap.docs.map(x=>x.id));render();
+  },()=>{clearTimeout(timer);$('status').textContent='Impossible de charger les disponibilités pour le moment.'});
+}
+
 if(!firebaseConfig||!firebaseConfig.apiKey||firebaseConfig.apiKey.startsWith('COLLE')){
   $('status').textContent='Réservation en ligne bientôt disponible.';
 }else{
   try{
-    const app=initializeApp(firebaseConfig);db=getFirestore(app);
-    const timer=setTimeout(()=>{$('status').textContent='Chargement des disponibilités…'},10000);
-    onSnapshot(query(collection(db,'slots'),where('d','>=',iso(today))),snap=>{
-      clearTimeout(timer);$('status').textContent='';
-      taken=new Set(snap.docs.map(x=>x.id));render();
-    },()=>{clearTimeout(timer);$('status').textContent='Impossible de charger les disponibilités pour le moment.'});
+    const app=initializeApp(firebaseConfig);db=getFirestore(app);listen();
   }catch(_){db=null;$('status').textContent='Réservation en ligne indisponible pour le moment.'}
 }
 </script>
