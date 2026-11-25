@@ -13,6 +13,12 @@ export const SERVICES = [
   // Pour en ajouter une : copie une ligne, mets une virgule entre les lignes et choisis une autre couleur.
 ];
 
+// Les salons. Chaque salon a son propre planning et son propre compte admin (e-mail + mot de passe).
+export const SHOPS = [
+  { id: 's1', name: 'The Box · Salon 1', addr: '6 Rue du Général Leclerc, 76000 Rouen',  email: 'leogiffard27@gmail.com' },
+  { id: 's2', name: 'The Box · Salon 2', addr: '31 Rue du Général Leclerc, 76000 Rouen', email: 'lgiffard76@gmail.com' }
+];
+
 export const OPEN_HOUR = 8;      // ouverture : 8h00
 export const CLOSE_HOUR = 20;    // fermeture : 20h00 (dernier créneau 19h30)
 export const CLOSED_DAYS = [0];  // 0 = dimanche, 1 = lundi, ... 6 = samedi
