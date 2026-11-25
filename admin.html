@@ -52,6 +52,18 @@ button,input,select,textarea{font:inherit}
 .period{font-family:Oswald,sans-serif;font-size:clamp(20px,2.6vw,28px);font-weight:600;margin-right:auto;white-space:nowrap}
 .team{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;align-items:center}
 .team b{font-weight:600;margin-right:4px}
+.team .tools{display:flex;gap:8px;margin-left:auto}
+.team .tools button{padding:0 14px;border-style:dashed}
+.team .tools button.del{color:#b3191d}
+.team .none{color:var(--mute)}
+img.av{object-fit:cover}
+.photorow{display:flex;align-items:center;gap:12px}
+.photorow .prev{flex:none;width:56px;height:56px;border-radius:50%;background:#eee;display:grid;place-items:center;color:#999;font:600 20px Oswald,sans-serif;overflow:hidden}
+.photorow .prev img{width:100%;height:100%;object-fit:cover}
+.photorow input{min-height:auto;border:0;padding:0}
+.dcbs{display:flex;flex-wrap:wrap;gap:6px}
+.dcb{display:inline-flex;align-items:center;gap:6px;margin:0;font-weight:500;border:1px solid var(--line);border-radius:8px;padding:8px 10px;cursor:pointer}
+.dcb input{width:18px;height:18px;min-height:0}
 .team button{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 14px 0 6px;border:1px solid var(--line);border-radius:999px;background:#fff;font-weight:600;cursor:pointer;color:var(--ink)}
 .team button .av{width:32px;height:32px;border-radius:50%;background:#161616;color:#fff;display:grid;place-items:center;font:600 14px Oswald,sans-serif}
 .team button small{font-weight:500;color:var(--mute)}
@@ -201,6 +213,37 @@ textarea{min-height:70px;resize:vertical}
   </div>
 </form></dialog>
 
+<!-- Ajouter un coiffeur -->
+<dialog id="mdlg"><form id="mform">
+  <div class="dh" style="--c:#161616"><h3>Ajouter un coiffeur</h3><p id="mshop"></p></div>
+  <div class="db">
+    <label for="mname">Pseudo <span class="danger">*</span></label>
+    <input id="mname" maxlength="30" required placeholder="Ex. : Marco">
+    <label for="mphoto">Photo <span style="font-weight:400;color:var(--mute)">(facultatif)</span></label>
+    <div class="photorow"><span class="prev" id="mprev">?</span><input id="mphoto" type="file" accept="image/*"></div>
+    <label>Jours de repos <span style="font-weight:400;color:var(--mute)">(facultatif)</span></label>
+    <div class="dcbs" id="moff"><label class="dcb"><input type="checkbox" value="1"> Lun</label><label class="dcb"><input type="checkbox" value="2"> Mar</label><label class="dcb"><input type="checkbox" value="3"> Mer</label><label class="dcb"><input type="checkbox" value="4"> Jeu</label><label class="dcb"><input type="checkbox" value="5"> Ven</label><label class="dcb"><input type="checkbox" value="6"> Sam</label></div>
+    <label for="mpass">Mot de passe gestion <span class="danger">*</span></label>
+    <input id="mpass" type="password" required autocomplete="off">
+    <div class="err" id="merr"></div>
+    <div class="row"><button type="button" class="btn" id="mclose">Annuler</button><button class="btn red" id="msave">Ajouter</button></div>
+  </div>
+</form></dialog>
+
+<!-- Supprimer un coiffeur -->
+<dialog id="xdlg"><form id="xform">
+  <div class="dh" style="--c:#b3191d"><h3>Supprimer un coiffeur</h3><p>Il disparaît du site et son agenda est effacé.</p></div>
+  <div class="db">
+    <label for="xwho">Coiffeur</label>
+    <select id="xwho"></select>
+    <p class="err" id="xinfo" style="color:var(--ink)"></p>
+    <label for="xpass">Mot de passe gestion <span class="danger">*</span></label>
+    <input id="xpass" type="password" required autocomplete="off">
+    <div class="err" id="xerr"></div>
+    <div class="row"><button type="button" class="btn" id="xclose">Annuler</button><button class="btn red" id="xsave">Supprimer définitivement</button></div>
+  </div>
+</form></dialog>
+
 <!-- Créneau bloqué -->
 <dialog id="bdlg">
   <div class="dh" style="--c:#555"><h3>Créneau bloqué</h3><p id="bwhen"></p></div>
@@ -211,9 +254,9 @@ textarea{min-height:70px;resize:vertical}
 
 <script type="module">
 import { firebaseConfig } from './firebase-config.js';
-import { SERVICES, SHOPS, OPEN_HOUR, CLOSE_HOUR, CLOSED_DAYS, slotsFor, works } from './salon.js';
+import { SERVICES, SHOPS, OPEN_HOUR, CLOSE_HOUR, CLOSED_DAYS, slotsFor, works, MANAGER_EMAIL } from './salon.js';
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
-import { getFirestore, collection, query, where, onSnapshot, doc, writeBatch, updateDoc, deleteDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { getFirestore, collection, query, where, onSnapshot, doc, writeBatch, updateDoc, deleteDoc, setDoc, getDocs } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 
 const DAYS=['dimanche','lundi','mardi','mercredi','jeudi','vendredi','samedi'];
@@ -248,7 +291,10 @@ const col=n=>collection(db,'shops',shop.id,n);
 const ref=(n,id)=>doc(db,'shops',shop.id,n,id);
 
 let sel=null; /* coiffeur affiché : id, 'all' (toute l'équipe, vue Jour) ou null (salon sans coiffeurs) */
-const team=()=>(shop&&shop.barbers)||[];
+let liveTeam=[],unsubTeam=null; /* coiffeurs du salon, lus en direct dans la base */
+const team=()=>liveTeam;
+const photoOk=p=>typeof p==='string'&&/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(p);
+const avatar=x=>photoOk(x.photo)?'<img class="av" alt="" src="'+x.photo+'">':'<span class="av">'+esc(String(x.name||'?')[0])+'</span>';
 const barberName=id=>(team().find(x=>x.id===id)||{name:id||''}).name;
 let db=null,auth=null,view=innerWidth<700?'day':'week',anchor=new Date(),bookings={},slots={},unsub=[],current=null,newSlot=null;
 anchor.setHours(0,0,0,0);
@@ -261,8 +307,8 @@ else{
     if(u&&!shop){$('lerr').textContent='Ce compte n\'est relié à aucun salon : vérifie les e-mails dans salon.js.';signOut(auth);return}
     $('login').hidden=!!u;$('app').classList.toggle('on',!!u);
     if(u){$('shopTag').textContent=shop.name+' · '+shop.addr;document.title='Agenda · '+shop.name;bookings={};slots={};
-      sel=team().length?'all':null;if(sel==='all')view='day';drawTeam();fillBarberSelect();subscribe()}
-    else{unsub.forEach(f=>f());unsub=[]}
+      liveTeam=[];sel=null;watchTeam();subscribe()}
+    else{unsub.forEach(f=>f());unsub=[];if(unsubTeam){unsubTeam();unsubTeam=null}}
   });
 }
 
@@ -290,17 +336,31 @@ function columns(){
   return range().map(d=>({d,b}));
 }
 const inView=bk=>!team().length||sel==='all'||bk.barber===sel;
+function watchTeam(){
+  if(unsubTeam)unsubTeam();
+  let first=true;
+  unsubTeam=onSnapshot(col('barbers'),snap=>{
+    liveTeam=snap.docs.map(d=>({id:d.id,...d.data()})).filter(b=>b.name).sort((a,b)=>(a.order||0)-(b.order||0));
+    if(!liveTeam.length)sel=null;
+    else if(first||!sel||(sel!=='all'&&!liveTeam.some(b=>b.id===sel))){sel='all';view='day'}
+    first=false;fillBarberSelect();subscribe();
+  },()=>{});
+}
 function drawTeam(){
-  const t=team();$('team').hidden=!t.length;if(!t.length)return;
+  const t=team();$('team').hidden=false;
   const cnt=id=>Object.values(bookings).filter(b=>b.barber===id).length;
+  const tools='<span class="tools"><button type="button" id="addBarber">+ Ajouter un coiffeur</button>'+(t.length?'<button type="button" class="del" id="delBarber">Supprimer un coiffeur</button>':'')+'</span>';
+  if(!t.length){$('team').innerHTML='<span class="none">Aucun coiffeur : un seul planning pour tout le salon.</span>'+tools;return}
   $('team').innerHTML='<b>Coiffeur :</b><button type="button" data-sel="all" class="'+(sel==='all'?'on':'')+'"><span class="av">★</span>Toute l\'équipe <small>(jour)</small></button>'+
-    t.map(x=>'<button type="button" data-sel="'+esc(x.id)+'" class="'+(sel===x.id?'on':'')+'"><span class="av">'+esc(x.name[0])+'</span>'+esc(x.name)+' <small>'+cnt(x.id)+'</small></button>').join('');
+    t.map(x=>'<button type="button" data-sel="'+esc(x.id)+'" class="'+(sel===x.id?'on':'')+'">'+avatar(x)+esc(x.name)+' <small>'+cnt(x.id)+'</small></button>').join('')+tools;
 }
 function fillBarberSelect(){
   $('abarberWrap').hidden=!team().length;
   $('abarber').innerHTML=team().map(x=>'<option value="'+esc(x.id)+'">'+esc(x.name)+'</option>').join('');
 }
 $('team').addEventListener('click',e=>{
+  if(e.target.closest('#addBarber'))return openAddBarber();
+  if(e.target.closest('#delBarber'))return openDelBarber();
   const b=e.target.closest('[data-sel]');if(!b)return;
   sel=b.dataset.sel;if(sel==='all'&&view!=='day')view='day';
   subscribe();
@@ -490,6 +550,79 @@ $('ablockday').onclick=()=>{
   const now=new Date();
   block(SLOTS.filter(t=>{const st=fromIso(newSlot.d);st.setHours(+t.slice(0,2),+t.slice(3));return st>now}).map(t=>[newSlot.d,t,newSlot.b]));
 };
+/* ===== Gestion de l'équipe (protégée par le compte « gestion ») ===== */
+let mgr=null;
+function manager(){if(!mgr){const a=initializeApp(firebaseConfig,'gestion');mgr={auth:getAuth(a),db:getFirestore(a)}}return mgr}
+async function asManager(pw,fn){
+  const m=manager();
+  try{await signInWithEmailAndPassword(m.auth,MANAGER_EMAIL,pw)}catch(_){throw new Error('pw')}
+  try{return await fn(m.db)}finally{try{await signOut(m.auth)}catch(_){}}
+}
+const slug=n=>String(n).normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/[^a-z0-9]/g,'').slice(0,16)||'coiffeur';
+let photoData=null;
+function openAddBarber(){
+  $('mshop').textContent=shop.name;$('mname').value='';$('mpass').value='';$('mphoto').value='';$('merr').textContent='';
+  photoData=null;$('mprev').textContent='?';
+  $('moff').querySelectorAll('input').forEach(c=>c.checked=false);
+  $('mdlg').showModal();$('mname').focus();
+}
+$('mclose').onclick=()=>$('mdlg').close();
+$('mphoto').addEventListener('change',async()=>{
+  const f=$('mphoto').files[0];photoData=null;$('mprev').textContent='?';if(!f)return;
+  try{
+    const img=await createImageBitmap(f);const S=200,c=document.createElement('canvas');c.width=c.height=S;
+    const k=Math.max(S/img.width,S/img.height),w=img.width*k,h=img.height*k;
+    c.getContext('2d').drawImage(img,(S-w)/2,(S-h)/2,w,h);
+    photoData=c.toDataURL('image/jpeg',0.82);
+    const im=new Image();im.alt='';im.src=photoData;$('mprev').textContent='';$('mprev').appendChild(im);
+  }catch(_){$('merr').textContent='Cette image n\'a pas pu être lue. Essaie une photo JPG ou PNG.'}
+});
+$('mform').addEventListener('submit',async e=>{
+  e.preventDefault();
+  const name=$('mname').value.trim();if(!name){$('merr').textContent='Le pseudo est obligatoire.';return}
+  if(team().some(b=>b.name.toLowerCase()===name.toLowerCase())){$('merr').textContent='Un coiffeur porte déjà ce pseudo.';return}
+  let id=slug(name),i=2;while(team().some(b=>b.id===id))id=slug(name).slice(0,14)+(i++);
+  const data={name,order:Date.now(),off:[...$('moff').querySelectorAll('input:checked')].map(c=>+c.value)};
+  if(photoData)data.photo=photoData;
+  $('msave').disabled=true;$('merr').textContent='';
+  try{await asManager($('mpass').value,mdb=>setDoc(doc(mdb,'shops',shop.id,'barbers',id),data));$('mdlg').close()}
+  catch(err){$('merr').textContent=err.message==='pw'?'Mot de passe gestion incorrect.':'L\'ajout a échoué. Vérifie les règles Firestore et réessaie.'}
+  finally{$('msave').disabled=false;$('mpass').value=''}
+});
+
+function openDelBarber(){
+  $('xwho').innerHTML=team().map(x=>'<option value="'+esc(x.id)+'">'+esc(x.name)+'</option>').join('');
+  if(sel&&sel!=='all')$('xwho').value=sel;
+  $('xpass').value='';$('xerr').textContent='';countUpcoming();$('xdlg').showModal();
+}
+async function countUpcoming(){
+  const id=$('xwho').value;$('xinfo').textContent='';
+  try{
+    const snap=await getDocs(query(col('bookings'),where('barber','==',id)));
+    const t=iso(new Date()),n=snap.docs.filter(d=>String(d.data().d)>=t).length;
+    if($('xwho').value===id)$('xinfo').textContent=n?'⚠️ '+barberName(id)+' a '+pl(n,'rendez-vous')+' à venir : '+(n>1?'ils seront supprimés':'il sera supprimé')+'. Pense à prévenir les clients.':barberName(id)+' n\'a aucun rendez-vous à venir.';
+  }catch(_){}
+}
+$('xwho').addEventListener('change',countUpcoming);
+$('xclose').onclick=()=>$('xdlg').close();
+$('xform').addEventListener('submit',async e=>{
+  e.preventDefault();
+  const id=$('xwho').value;if(!id)return;
+  $('xsave').disabled=true;$('xerr').textContent='';
+  try{
+    await asManager($('xpass').value,async mdb=>{
+      // 1) son agenda (RDV + créneaux), avec le compte du salon
+      const bk=await getDocs(query(col('bookings'),where('barber','==',id)));
+      const sl=(await getDocs(col('slots'))).docs.filter(d=>slotB(d.id)===id);
+      const refs=bk.docs.map(d=>d.ref).concat(sl.map(d=>d.ref));
+      for(let i=0;i<refs.length;i+=400){const b=writeBatch(db);refs.slice(i,i+400).forEach(r=>b.delete(r));await b.commit()}
+      // 2) le coiffeur lui-même, avec le compte gestion
+      await deleteDoc(doc(mdb,'shops',shop.id,'barbers',id));
+    });
+    $('xdlg').close();
+  }catch(err){$('xerr').textContent=err.message==='pw'?'Mot de passe gestion incorrect.':'La suppression a échoué, réessaie.'}
+  finally{$('xsave').disabled=false;$('xpass').value=''}
+});
 </script>
 </body>
 </html>
