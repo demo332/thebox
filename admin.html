@@ -34,12 +34,18 @@ button,input,select,textarea{font:inherit}
 .lcard .btn{width:100%}
 .lerr{color:#ff6b6e;min-height:22px;margin-top:10px;font-size:14px}
 .lcard a{color:#aaa;font-size:14px}
+.lshops{display:grid;gap:8px;margin-bottom:12px;text-align:left}
+.lshops button{text-align:left;display:flex;align-items:center;gap:12px;min-height:56px;border:1px solid #333;border-radius:10px;background:#111;color:#fff;padding:8px 14px;cursor:pointer;font:inherit}
+.lshops button .n{flex:none;width:34px;height:34px;border-radius:50%;border:2px solid #555;display:grid;place-items:center;font:600 17px Oswald,sans-serif}
+.lshops button b{display:block}.lshops button small{color:#aaa}
+.lshops button.on{border-color:var(--red);background:#1a0b0b}.lshops button.on .n{background:var(--red);border-color:var(--red)}
+.shopTag{font-size:14px;color:#bbb;margin-right:auto}
 /* app */
 #app{display:none}#app.on{display:block}
 .top{background:#000;color:#fff;position:sticky;top:0;z-index:10}
 .topin{max-width:1500px;margin:0 auto;display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:8px max(2vw,12px)}
 .top img{width:44px;height:44px}
-.top h1{font-size:22px;margin-right:auto}
+.top h1{font-size:22px}
 .top .btn{background:#1d1d1d;border-color:#333;color:#fff}
 .wrap{max-width:1500px;margin:0 auto;padding:16px max(2vw,12px) 40px}
 .bar{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-bottom:14px}
@@ -104,7 +110,7 @@ textarea{min-height:70px;resize:vertical}
 .tabs .btn.on{background:#161616;color:#fff;border-color:#161616}
 .err{color:#b3191d;font-size:14px;min-height:20px;margin-top:8px}
 .danger{color:#b3191d}
-@media(max-width:700px){.top h1,.top .site{display:none}.period{width:100%}}
+@media(max-width:700px){.top h1,.top .site{display:none}.shopTag{width:100%;order:-1}.period{width:100%}}
 </style>
 </head>
 <body>
@@ -113,7 +119,8 @@ textarea{min-height:70px;resize:vertical}
   <form class="lcard" id="lform">
     <img src="logo.png" alt="The Box Barber Shop">
     <h1>Espace salon</h1>
-    <input id="lmail" type="email" placeholder="E-mail" autocomplete="username" hidden>
+    <div class="lshops" id="lshops" role="radiogroup" aria-label="Salon"></div>
+    <input id="lmail" type="email" autocomplete="username" hidden>
     <input id="lpass" type="password" placeholder="Mot de passe" autocomplete="current-password" required aria-label="Mot de passe">
     <button class="btn red" id="lbtn">Ouvrir l'agenda</button>
     <div class="lerr" id="lerr" role="alert"></div>
@@ -124,7 +131,7 @@ textarea{min-height:70px;resize:vertical}
 <div id="app">
   <header class="top"><div class="topin">
     <img src="logo.png" alt="">
-    <h1>Agenda</h1>
+    <h1>Agenda</h1><span class="shopTag" id="shopTag"></span>
     <button class="btn icon" id="prev" aria-label="Précédent">‹</button>
     <button class="btn" id="todayBtn">Aujourd'hui</button>
     <button class="btn icon" id="next" aria-label="Suivant">›</button>
@@ -194,8 +201,8 @@ textarea{min-height:70px;resize:vertical}
 </dialog>
 
 <script type="module">
-import { firebaseConfig, ownerEmail } from './firebase-config.js';
-import { SERVICES, OPEN_HOUR, CLOSE_HOUR, CLOSED_DAYS, slotsFor } from './salon.js';
+import { firebaseConfig } from './firebase-config.js';
+import { SERVICES, SHOPS, OPEN_HOUR, CLOSE_HOUR, CLOSED_DAYS, slotsFor } from './salon.js';
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import { getFirestore, collection, query, where, onSnapshot, doc, writeBatch, updateDoc, deleteDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
@@ -219,8 +226,16 @@ const pl=(n,w)=>n+' '+w+(n>1?'s':'');
 const euro=n=>n.toLocaleString('fr-FR')+' €';
 
 const configured=firebaseConfig&&firebaseConfig.apiKey&&!firebaseConfig.apiKey.startsWith('COLLE');
-const ownerSet=ownerEmail&&!ownerEmail.startsWith('TON-EMAIL');
-if(!ownerSet)$('lmail').hidden=false;
+let shop=null,pick=0;
+try{pick=Math.max(0,Math.min(SHOPS.length-1,+localStorage.getItem('thebox-shop')||0))}catch(_){}
+function drawShops(){
+  $('lshops').innerHTML=SHOPS.map((x,i)=>'<button type="button" role="radio" aria-checked="'+(i===pick)+'" class="'+(i===pick?'on':'')+'" data-i="'+i+'"><span class="n">'+(i+1)+'</span><span><b>'+esc(x.name)+'</b><small>'+esc(x.addr)+'</small></span></button>').join('');
+}
+drawShops();
+$('lshops').addEventListener('click',e=>{const b=e.target.closest('[data-i]');if(!b)return;pick=+b.dataset.i;drawShops();$('lpass').focus()});
+/* chemins dans la base, séparés par salon */
+const col=n=>collection(db,'shops',shop.id,n);
+const ref=(n,id)=>doc(db,'shops',shop.id,n,id);
 
 let db=null,auth=null,view=innerWidth<700?'day':'week',anchor=new Date(),bookings={},slots={},unsub=[],current=null,newSlot=null;
 anchor.setHours(0,0,0,0);
@@ -229,16 +244,21 @@ if(!configured){$('lerr').textContent='Le fichier firebase-config.js n\'est pas 
 else{
   const app=initializeApp(firebaseConfig);db=getFirestore(app);auth=getAuth(app);
   onAuthStateChanged(auth,u=>{
+    shop=u?SHOPS.find(x=>x.email.toLowerCase()===String(u.email||'').toLowerCase())||null:null;
+    if(u&&!shop){$('lerr').textContent='Ce compte n\'est relié à aucun salon : vérifie les e-mails dans salon.js.';signOut(auth);return}
     $('login').hidden=!!u;$('app').classList.toggle('on',!!u);
-    if(u)subscribe();else{unsub.forEach(f=>f());unsub=[]}
+    if(u){$('shopTag').textContent=shop.name+' · '+shop.addr;document.title='Agenda · '+shop.name;bookings={};slots={};subscribe()}
+    else{unsub.forEach(f=>f());unsub=[]}
   });
 }
 
 $('lform').addEventListener('submit',async e=>{
   e.preventDefault();if(!auth)return;
   $('lbtn').disabled=true;$('lerr').textContent='';
-  try{await signInWithEmailAndPassword(auth,ownerSet?ownerEmail:$('lmail').value.trim(),$('lpass').value);$('lpass').value=''}
-  catch(_){$('lerr').textContent='Mot de passe incorrect.'}
+  const x=SHOPS[pick];
+  try{localStorage.setItem('thebox-shop',String(pick))}catch(_){}
+  try{await signInWithEmailAndPassword(auth,x.email,$('lpass').value);$('lpass').value=''}
+  catch(_){$('lerr').textContent='Mot de passe incorrect pour '+x.name+'.'}
   finally{$('lbtn').disabled=false}
 });
 $('logout').onclick=()=>signOut(auth);
@@ -252,11 +272,11 @@ function range(){
 function subscribe(){
   unsub.forEach(f=>f());unsub=[];
   const r=range(),a=iso(r[0]),b=iso(r[r.length-1]);
-  const fail=()=>{showMsg('Impossible de lire les rendez-vous : vérifie que l\'e-mail dans les règles Firestore est bien celui de ton compte.')};
-  unsub.push(onSnapshot(query(collection(db,'bookings'),where('d','>=',a),where('d','<=',b)),snap=>{
+  const fail=()=>{showMsg('Impossible de lire les rendez-vous : vérifie que l\'e-mail de ce salon est le même dans salon.js, dans Authentication et dans les règles Firestore.')};
+  unsub.push(onSnapshot(query(col('bookings'),where('d','>=',a),where('d','<=',b)),snap=>{
     bookings={};snap.docs.forEach(x=>bookings[x.id]={id:x.id,...x.data()});showMsg('');render();
   },fail));
-  unsub.push(onSnapshot(query(collection(db,'slots'),where('d','>=',a),where('d','<=',b)),snap=>{
+  unsub.push(onSnapshot(query(col('slots'),where('d','>=',a),where('d','<=',b)),snap=>{
     slots={};snap.docs.forEach(x=>slots[x.id]={id:x.id,...x.data()});render();
   },fail));
   render();
@@ -351,21 +371,21 @@ function setStatusUI(s){$('dstatus').querySelectorAll('button').forEach(b=>b.cla
 $('dstatus').addEventListener('click',async e=>{
   const b=e.target.closest('button');if(!b||!current)return;
   setStatusUI(b.dataset.s);
-  try{await updateDoc(doc(db,'bookings',current),{status:b.dataset.s})}catch(_){$('derr').textContent='Le statut n\'a pas pu être enregistré.'}
+  try{await updateDoc(ref('bookings',current),{status:b.dataset.s})}catch(_){$('derr').textContent='Le statut n\'a pas pu être enregistré.'}
 });
-let noteT;$('dnote').addEventListener('input',()=>{clearTimeout(noteT);const id=current,v=$('dnote').value;noteT=setTimeout(async()=>{try{await updateDoc(doc(db,'bookings',id),{note:v})}catch(_){$('derr').textContent='La note n\'a pas pu être enregistrée.'}},700)});
+let noteT;$('dnote').addEventListener('input',()=>{clearTimeout(noteT);const id=current,v=$('dnote').value;noteT=setTimeout(async()=>{try{await updateDoc(ref('bookings',id),{note:v})}catch(_){$('derr').textContent='La note n\'a pas pu être enregistrée.'}},700)});
 $('dclose').onclick=()=>$('ddlg').close();
 $('dcancel').onclick=async()=>{
   const btn=$('dcancel');if(!btn.dataset.armed){btn.dataset.armed='1';btn.textContent='Confirmer l\'annulation';return}
   btn.disabled=true;
-  try{const ids=idsOf(bookings[current]);await deleteDoc(doc(db,'bookings',current));for(const k of ids)await deleteDoc(doc(db,'slots',k));$('ddlg').close()}
+  try{const ids=idsOf(bookings[current]);await deleteDoc(ref('bookings',current));for(const k of ids)await deleteDoc(ref('slots',k));$('ddlg').close()}
   catch(_){$('derr').textContent='L\'annulation a échoué, réessaie.'}
   finally{btn.disabled=false}
 };
 
 function openBlocked(id){current=id;const s=slots[id];$('bwhen').textContent=longDate(s.d)+' à '+s.t;$('berr').textContent='';$('bdlg').showModal()}
 $('bclose').onclick=()=>$('bdlg').close();
-$('bfree').onclick=async()=>{try{await deleteDoc(doc(db,'slots',current));$('bdlg').close()}catch(_){$('berr').textContent='Impossible de débloquer, réessaie.'}};
+$('bfree').onclick=async()=>{try{await deleteDoc(ref('slots',current));$('bdlg').close()}catch(_){$('berr').textContent='Impossible de débloquer, réessaie.'}};
 
 /* ajouter / bloquer */
 $('aserv').innerHTML=SERVICES.map(s=>'<option value="'+esc(s.n)+'">'+esc(s.n)+' ('+dur(s.dur||30)+')</option>').join('');
@@ -401,8 +421,8 @@ $('aform').addEventListener('submit',async e=>{
   $('asave').disabled=true;
   try{
     const batch=writeBatch(db);
-    need.forEach((k,j)=>batch.set(doc(db,'slots',k),{d,t:SLOTS[i0+j],taken:true}));
-    batch.set(doc(db,'bookings',id),{d,t,name,phone:$('aphone').value.trim(),service:$('aserv').value,status:'ok',note:$('anote').value.trim(),created:new Date().toISOString()});
+    need.forEach((k,j)=>batch.set(ref('slots',k),{d,t:SLOTS[i0+j],taken:true}));
+    batch.set(ref('bookings',id),{d,t,name,phone:$('aphone').value.trim(),service:$('aserv').value,status:'ok',note:$('anote').value.trim(),created:new Date().toISOString()});
     await batch.commit();$('adlg').close();
     anchor=dd;if(view==='day'||!range().some(x=>iso(x)===d))subscribe();
   }catch(err){$('aerr').textContent=err&&err.code==='permission-denied'?'Ce créneau vient d\'être pris.':'L\'ajout a échoué, réessaie.'}
@@ -410,7 +430,7 @@ $('aform').addEventListener('submit',async e=>{
 });
 async function block(ids){
   const batch=writeBatch(db);let n=0;
-  for(const [d,t] of ids){const id=sid(d,t);if(slots[id])continue;batch.set(doc(db,'slots',id),{d,t,taken:true,blocked:true});n++}
+  for(const [d,t] of ids){const id=sid(d,t);if(slots[id])continue;batch.set(ref('slots',id),{d,t,taken:true,blocked:true});n++}
   if(!n){$('aerr').textContent='Rien à bloquer : tout est déjà pris.';return}
   try{await batch.commit();$('adlg').close()}catch(_){$('aerr').textContent='Le blocage a échoué, réessaie.'}
 }
