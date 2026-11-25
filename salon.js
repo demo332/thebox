@@ -14,25 +14,16 @@ export const SERVICES = [
 ];
 
 // Les salons. Chaque salon a son propre planning et son propre compte admin (e-mail + mot de passe).
+// Les coiffeurs ne sont plus ici : ils s'ajoutent et se suppriment depuis la page admin.
 // ⚠️ Mets ici les e-mails des comptes créés dans Firebase > Authentication (un par salon),
 //    et les mêmes dans les règles Firestore.
 export const SHOPS = [
-  { id: 's1', name: 'The Box · Salon 1', addr: '6 Rue du Général Leclerc, 76000 Rouen',  email: 'leogiffard27@gmail.com',
-    // Coiffeurs du salon 1 : chacun a son propre planning.
-    // id : en minuscules, sans espace ni accent (ne plus le changer une fois des RDV pris).
-    // off : jours de repos du coiffeur, ex. off: [1] = repos le lundi (0 = dimanche … 6 = samedi).
-    barbers: [
-      { id: 'zak',      name: 'Zak',      off: [] },
-      { id: 'saracide', name: 'Saracide', off: [] },
-      { id: 'marco',    name: 'Marco',    off: [] },
-      { id: 'dani',     name: 'Dani',     off: [] },
-      { id: 'salif',    name: 'Salif',    off: [] },
-      { id: 'luan',     name: 'Luan',     off: [] }
-    ] },
-  { id: 's2', name: 'The Box · Salon 2', addr: '31 Rue du Général Leclerc, 76000 Rouen', email: 'lgiffard76@gmail.com',
-    barbers: [] // pas de choix du coiffeur : un seul planning pour le salon (ajoute des coiffeurs ici comme pour le salon 1)
-  }
+  { id: 's1', name: 'The Box · Salon 1', addr: '6 Rue du Général Leclerc, 76000 Rouen',  email: 'leogiffard27@gmail.com' },
+  { id: 's2', name: 'The Box · Salon 2', addr: '31 Rue du Général Leclerc, 76000 Rouen', email: 'lgiffard76@gmail.com' }
 ];
+
+// Compte « gestion » (Firebase > Authentication) : son mot de passe est demandé pour ajouter ou supprimer un coiffeur.
+export const MANAGER_EMAIL = 'gestion@thebox-rouen.fr';
 
 export const OPEN_HOUR = 8;      // ouverture : 8h00
 export const CLOSE_HOUR = 20;    // fermeture : 20h00 (dernier créneau 19h30)
