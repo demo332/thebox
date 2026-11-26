@@ -64,6 +64,13 @@ img.av{object-fit:cover}
 .dcbs{display:flex;flex-wrap:wrap;gap:6px}
 .dcb{display:inline-flex;align-items:center;gap:6px;margin:0;font-weight:500;border:1px solid var(--line);border-radius:8px;padding:8px 10px;cursor:pointer}
 .dcb input{width:18px;height:18px;min-height:0}
+.leaves{list-style:none;padding:0;margin:0 0 8px;display:grid;gap:6px}
+.leaves li{display:flex;align-items:center;gap:10px;background:#f4f6fb;border:1px solid #dbe3f5;border-radius:8px;padding:6px 6px 6px 12px;font-weight:500}
+.leaves li span{flex:1}.leaves li button{min-height:36px;border:1px solid var(--line);background:#fff;border-radius:8px;padding:0 10px;cursor:pointer;color:#b3191d;font-weight:600}
+.leaves li.empty{background:none;border:0;padding:0;color:var(--mute);font-weight:400}
+.leaveadd{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.leaveadd input{flex:1 1 130px;width:auto}.leaveadd span{color:var(--mute)}
+.team .tools button.edit{color:#2f6fe4}
 .team button{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 14px 0 6px;border:1px solid var(--line);border-radius:999px;background:#fff;font-weight:600;cursor:pointer;color:var(--ink)}
 .team button .av{width:32px;height:32px;border-radius:50%;background:#161616;color:#fff;display:grid;place-items:center;font:600 14px Oswald,sans-serif}
 .team button small{font-weight:500;color:var(--mute)}
@@ -230,6 +237,29 @@ textarea{min-height:70px;resize:vertical}
   </div>
 </form></dialog>
 
+<!-- Modifier un coiffeur : repos et congés -->
+<dialog id="edlg"><form id="eform">
+  <div class="dh" style="--c:#2f6fe4"><h3>Modifier un coiffeur</h3><p id="eshop"></p></div>
+  <div class="db">
+    <label for="ewho">Coiffeur</label>
+    <select id="ewho"></select>
+    <label>Jours de repos chaque semaine</label>
+    <div class="dcbs" id="eoff"><label class="dcb"><input type="checkbox" value="1"> Lun</label><label class="dcb"><input type="checkbox" value="2"> Mar</label><label class="dcb"><input type="checkbox" value="3"> Mer</label><label class="dcb"><input type="checkbox" value="4"> Jeu</label><label class="dcb"><input type="checkbox" value="5"> Ven</label><label class="dcb"><input type="checkbox" value="6"> Sam</label></div>
+    <label>Congés</label>
+    <ul class="leaves" id="eleaves"></ul>
+    <div class="leaveadd">
+      <span>du</span><input id="efrom" type="date" aria-label="Début des congés">
+      <span>au</span><input id="eto" type="date" aria-label="Fin des congés">
+      <button type="button" class="btn" id="eaddLeave">Ajouter</button>
+    </div>
+    <p id="ewarn" class="err" style="color:var(--ink)"></p>
+    <label for="epass">Mot de passe gestion <span class="danger">*</span></label>
+    <input id="epass" type="password" required autocomplete="off">
+    <div class="err" id="eerr"></div>
+    <div class="row"><button type="button" class="btn" id="eclose">Annuler</button><button class="btn red" id="esave">Enregistrer</button></div>
+  </div>
+</form></dialog>
+
 <!-- Supprimer un coiffeur -->
 <dialog id="xdlg"><form id="xform">
   <div class="dh" style="--c:#b3191d"><h3>Supprimer un coiffeur</h3><p>Il disparaît du site et son agenda est effacé.</p></div>
@@ -335,6 +365,12 @@ function columns(){
   const b=sel?team().find(x=>x.id===sel):null;
   return range().map(d=>({d,b}));
 }
+/* pourquoi un coiffeur ne travaille pas ce jour-là */
+function offLabel(b,d){
+  if(CLOSED_DAYS.includes(d.getDay()))return 'Fermé';
+  if(b&&(b.off||[]).includes(d.getDay()))return 'Repos';
+  return 'Congés';
+}
 const inView=bk=>!team().length||sel==='all'||bk.barber===sel;
 function watchTeam(){
   if(unsubTeam)unsubTeam();
@@ -349,7 +385,7 @@ function watchTeam(){
 function drawTeam(){
   const t=team();$('team').hidden=false;
   const cnt=id=>Object.values(bookings).filter(b=>b.barber===id).length;
-  const tools='<span class="tools"><button type="button" id="addBarber">+ Ajouter un coiffeur</button>'+(t.length?'<button type="button" class="del" id="delBarber">Supprimer un coiffeur</button>':'')+'</span>';
+  const tools='<span class="tools"><button type="button" id="addBarber">+ Ajouter un coiffeur</button>'+(t.length?'<button type="button" class="edit" id="editBarber">Modifier un coiffeur</button><button type="button" class="del" id="delBarber">Supprimer un coiffeur</button>':'')+'</span>';
   if(!t.length){$('team').innerHTML='<span class="none">Aucun coiffeur : un seul planning pour tout le salon.</span>'+tools;return}
   $('team').innerHTML='<b>Coiffeur :</b><button type="button" data-sel="all" class="'+(sel==='all'?'on':'')+'"><span class="av">★</span>Toute l\'équipe <small>(jour)</small></button>'+
     t.map(x=>'<button type="button" data-sel="'+esc(x.id)+'" class="'+(sel===x.id?'on':'')+'">'+avatar(x)+esc(x.name)+' <small>'+cnt(x.id)+'</small></button>').join('')+tools;
@@ -361,6 +397,7 @@ function fillBarberSelect(){
 $('team').addEventListener('click',e=>{
   if(e.target.closest('#addBarber'))return openAddBarber();
   if(e.target.closest('#delBarber'))return openDelBarber();
+  if(e.target.closest('#editBarber'))return openEditBarber();
   const b=e.target.closest('[data-sel]');if(!b)return;
   sel=b.dataset.sel;if(sel==='all'&&view!=='day')view='day';
   subscribe();
@@ -424,7 +461,7 @@ function render(){
     h+='<div class="tm'+(isHour?' h':'')+'">'+t+'</div>';
     cols.forEach((col,ci)=>{
       const d=col.d,bid=col.b&&col.b.id;
-      if(closedDay[ci]){if(ri===0)h+='<div class="closedcol" style="--rows:'+SLOTS.length+';grid-row:span '+SLOTS.length+'">'+(CLOSED_DAYS.includes(d.getDay())?'Fermé':'Repos')+'</div>';return}
+      if(closedDay[ci]){if(ri===0)h+='<div class="closedcol" style="--rows:'+SLOTS.length+';grid-row:span '+SLOTS.length+'">'+offLabel(col.b,d)+'</div>';return}
       const k=iso(d),id=sid(k,t,bid);
       const st=new Date(d);st.setHours(+t.slice(0,2),+t.slice(3));const en=new Date(st.getTime()+30*60000);
       const past=en<=now,isNow=st<=now&&now<en;
@@ -622,6 +659,62 @@ $('xform').addEventListener('submit',async e=>{
     $('xdlg').close();
   }catch(err){$('xerr').textContent=err.message==='pw'?'Mot de passe gestion incorrect.':'La suppression a échoué, réessaie.'}
   finally{$('xsave').disabled=false;$('xpass').value=''}
+});
+/* ----- Modifier un coiffeur : jours de repos + congés ----- */
+let leaves=[];
+const frDate=k=>{const d=fromIso(k);return d.getDate()+' '+MONTHS[d.getMonth()]+' '+d.getFullYear()};
+function openEditBarber(){
+  $('eshop').textContent=shop.name;
+  $('ewho').innerHTML=team().map(x=>'<option value="'+esc(x.id)+'">'+esc(x.name)+'</option>').join('');
+  if(sel&&sel!=='all')$('ewho').value=sel;
+  loadEdit();$('epass').value='';$('eerr').textContent='';$('efrom').value='';$('eto').value='';
+  $('edlg').showModal();
+}
+function loadEdit(){
+  const b=team().find(x=>x.id===$('ewho').value)||{};
+  $('eoff').querySelectorAll('input').forEach(c=>c.checked=(b.off||[]).includes(+c.value));
+  const t=iso(new Date());
+  leaves=(b.leave||[]).filter(r=>r&&r.from&&r.to&&r.to>=t).map(r=>({from:r.from,to:r.to}));
+  drawLeaves();
+}
+function drawLeaves(){
+  leaves.sort((a,b)=>a.from.localeCompare(b.from));
+  $('eleaves').innerHTML=leaves.length?leaves.map((r,i)=>'<li><span>'+(r.from===r.to?'le '+esc(frDate(r.from)):'du '+esc(frDate(r.from))+' au '+esc(frDate(r.to)))+'</span><button type="button" data-rm="'+i+'">Retirer</button></li>').join(''):'<li class="empty">Aucun congé prévu.</li>';
+  checkLeaves();
+}
+async function checkLeaves(){
+  // prévient s'il y a déjà des RDV pendant les congés ou les jours de repos choisis
+  $('ewarn').textContent='';
+  const id=$('ewho').value,b=team().find(x=>x.id===id);if(!b)return;
+  const off=[...$('eoff').querySelectorAll('input:checked')].map(c=>+c.value);
+  try{
+    const snap=await getDocs(query(col('bookings'),where('barber','==',id)));
+    const t=iso(new Date());
+    const hit=snap.docs.map(d=>d.data()).filter(r=>String(r.d)>=t&&!works({off,leave:leaves},fromIso(String(r.d))));
+    if($('ewho').value===id&&hit.length)$('ewarn').textContent='⚠️ '+b.name+' a déjà '+pl(hit.length,'rendez-vous')+' pendant ces jours (ex. '+longDate(String(hit[0].d))+' à '+hit[0].t+'). Ils restent dans l\'agenda : pense à les déplacer ou à prévenir les clients.';
+  }catch(_){}
+}
+$('ewho').addEventListener('change',loadEdit);
+$('eoff').addEventListener('change',checkLeaves);
+$('eleaves').addEventListener('click',e=>{const b=e.target.closest('[data-rm]');if(!b)return;leaves.splice(+b.dataset.rm,1);drawLeaves()});
+$('efrom').addEventListener('change',()=>{if(!$('eto').value||$('eto').value<$('efrom').value)$('eto').value=$('efrom').value});
+$('eaddLeave').onclick=()=>{
+  const f=$('efrom').value,t=$('eto').value||f;
+  if(!f){$('eerr').textContent='Choisis au moins la date de début.';return}
+  if(t<f){$('eerr').textContent='La date de fin est avant la date de début.';return}
+  if(t<iso(new Date())){$('eerr').textContent='Cette période est déjà passée.';return}
+  $('eerr').textContent='';leaves.push({from:f,to:t});$('efrom').value='';$('eto').value='';drawLeaves();
+};
+$('eclose').onclick=()=>$('edlg').close();
+$('eform').addEventListener('submit',async e=>{
+  e.preventDefault();
+  const id=$('ewho').value;if(!id)return;
+  if($('efrom').value){$('eaddLeave').click();if($('eerr').textContent)return}
+  const off=[...$('eoff').querySelectorAll('input:checked')].map(c=>+c.value);
+  $('esave').disabled=true;$('eerr').textContent='';
+  try{await asManager($('epass').value,mdb=>updateDoc(doc(mdb,'shops',shop.id,'barbers',id),{off,leave:leaves}));$('edlg').close()}
+  catch(err){$('eerr').textContent=err.message==='pw'?'Mot de passe gestion incorrect.':'L\'enregistrement a échoué. Vérifie que les nouvelles règles Firestore sont publiées.'}
+  finally{$('esave').disabled=false;$('epass').value=''}
 });
 </script>
 </body>
