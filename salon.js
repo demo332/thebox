@@ -29,8 +29,14 @@ export const OPEN_HOUR = 8;      // ouverture : 8h00
 export const CLOSE_HOUR = 20;    // fermeture : 20h00 (dernier créneau 19h30)
 export const CLOSED_DAYS = [0];  // 0 = dimanche, 1 = lundi, ... 6 = samedi
 
-// Un coiffeur travaille-t-il ce jour-là ? (d = Date)
-export const works = (barber, d) => !CLOSED_DAYS.includes(d.getDay()) && !((barber && barber.off) || []).includes(d.getDay());
+// Un coiffeur travaille-t-il ce jour-là ? (d = Date) — tient compte des jours de repos et des congés
+export const works = (barber, d) => {
+  if (CLOSED_DAYS.includes(d.getDay())) return false;
+  if (!barber) return true;
+  if ((barber.off || []).includes(d.getDay())) return false;            // jour de repos chaque semaine
+  const k = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  return !(barber.leave || []).some(r => r && k >= r.from && k <= r.to); // congés (du … au …)
+};
 
 // Nombre de créneaux de 30 min qu'occupe une prestation
 export const slotsFor = s => Math.max(1, Math.ceil(((s && s.dur) || 30) / 30));
