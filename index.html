@@ -160,8 +160,6 @@ footer p{margin:0;line-height:1.7}
 footer a.admin{color:var(--mute);font-size:14px;text-decoration:none;border:1px solid var(--line);border-radius:10px;padding:10px 14px}
 footer a.admin:hover{color:#fff;border-color:#555}
 
-/* bouton fixe sur téléphone */
-.mcta{display:none}
 
 /* fenêtre de réservation */
 dialog{color-scheme:light;border:0;border-radius:20px;padding:0;width:min(460px,94vw);background:#fff;color:var(--cink);box-shadow:0 30px 80px rgba(0,0,0,.5)}
@@ -212,12 +210,8 @@ textarea{min-height:76px;resize:vertical}
   .dlg{padding:10px 18px 22px}
   .grab{display:block;width:44px;height:5px;border-radius:3px;background:#d9d9d9;margin:0 auto 14px}
   .dlg h3{font-size:24px}
-  .mcta{display:flex;position:fixed;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom));z-index:30;min-height:54px;font-size:17px;border-radius:14px;box-shadow:0 12px 30px rgba(0,0,0,.55);transition:transform .25s,opacity .25s}
-  .mcta.away{transform:translateY(140%);opacity:0;pointer-events:none}
-  body{padding-bottom:84px}
 }
 @media(prefers-reduced-motion:no-preference){.s{transition:background .15s,color .15s}html{scroll-behavior:smooth}}
-@media(prefers-reduced-motion:reduce){.mcta{transition:none}}
 </style>
 </head>
 <body>
@@ -383,7 +377,6 @@ textarea{min-height:76px;resize:vertical}
   </div>
 </footer>
 
-<a class="btn mcta" id="mcta" href="#reserver">Prendre rendez-vous</a>
 
 <dialog id="dlg"><form class="dlg" id="form" method="dialog">
   <div id="fbody">
@@ -617,11 +610,6 @@ $('form').addEventListener('submit',async e=>{
 setInterval(render,60000);
 show('step1',true);
 
-/* bouton « Prendre rendez-vous » fixe sur téléphone, caché quand la réservation est à l'écran */
-if('IntersectionObserver' in window){
-  const io=new IntersectionObserver(es=>{for(const e of es)$('mcta').classList.toggle('away',e.isIntersecting)},{threshold:0.05});
-  io.observe($('book'));
-}
 
 /* créneaux pris du salon choisi (un seul abonnement à la fois) */
 function listen(){
