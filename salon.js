@@ -23,7 +23,7 @@ export const SHOPS = [
 ];
 
 // Compte « gestion » (Firebase > Authentication) : son mot de passe est demandé pour ajouter ou supprimer un coiffeur.
-export const MANAGER_EMAIL = 'gestion@thebox-rouen.fr';
+export const MANAGER_EMAIL = 'bgcoucou51@gmail.com';
 
 export const OPEN_HOUR = 8;      // ouverture : 8h00
 export const CLOSE_HOUR = 20;    // fermeture : 20h00 (dernier créneau 19h30)
